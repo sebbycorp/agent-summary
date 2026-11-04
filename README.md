@@ -1,5 +1,7 @@
 # agent-summary
 
+**Today's status:** [reports/_status/latest.md](reports/_status/latest.md) - written daily at 10:30 by the auditor; says which reports arrived and which are missing.
+
 Daily reports written by kagent agents running on **Agent Substrate** (cluster `omni-viper`).
 Each report is committed by the agent itself, from its gVisor sandbox, through the GitHub MCP server.
 
@@ -17,6 +19,7 @@ reports/
 | `fortigate-health` | `fortigate` | daily 09:00 | `fg_resource_usage`, `fg_system_status` on fw-maniak-hq |
 | `k8s-cve` | `k8s-cve-checker` | daily 09:15 | Kubernetes version + container images → [OSV.dev](https://osv.dev) |
 | `fortiguard-cve` | `fortigate-cve-watch` | daily 09:30 | FortiOS version → FortiGuard PSIRT + [Outbreak Alerts](https://fortiguard.fortinet.com/outbreak-alert) RSS |
+| `_status` | `agent-summary-auditor` | daily 10:30 | this repo: checks every report above arrived today |
 
 Every report starts with a one-line verdict, then the tables. Agents are read-only on the systems they inspect;
 the only thing they write is this repo.
