@@ -16,6 +16,8 @@ reports/
 
 | Report | Agent | Schedule (America/Toronto) | Sources |
 | --- | --- | --- | --- |
+| `agentgateway-updates` | `oss-update-watcher` | daily 08:00 | [github.com/agentgateway](https://github.com/agentgateway): releases, merged PRs, highlights |
+| `kagent-updates` | `oss-update-watcher` | daily 08:20 | [github.com/kagent-dev](https://github.com/kagent-dev) (kagent, substrate, tools, …): releases, merged PRs, highlights |
 | `fortigate-health` | `fortigate` | daily 09:00 | `fg_resource_usage`, `fg_system_status` on fw-maniak-hq |
 | `k8s-cve` | `k8s-cve-checker` | daily 09:15 | Kubernetes version + container images → [OSV.dev](https://osv.dev) |
 | `fortiguard-cve` | `fortigate-cve-watch` | daily 09:30 | FortiOS version → FortiGuard PSIRT + [Outbreak Alerts](https://fortiguard.fortinet.com/outbreak-alert) RSS |
