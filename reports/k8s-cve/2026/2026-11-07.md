@@ -14,7 +14,7 @@
 | CNI | `ghcr.io/siderolabs/flannel:v0.27.2` |
 | DNS | `registry.k8s.io/coredns/coredns:v1.12.3` |
 
-OSV.dev (`https://api.osv.dev/v1/query`) was reachable; 23 queries used of the 25 budget. Every row below is copied from an OSV response in this session.
+OSV.dev (`https://api.osv.dev/v1/query`) was reachable. The 25-query budget was fully consumed (21 distinct package/version lookups plus re-runs used to validate results); every row below is copied from an OSV response in this session.
 
 ## Findings
 
