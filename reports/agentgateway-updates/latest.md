@@ -1,8 +1,8 @@
-# agentgateway-updates - 2026-11-06
+# agentgateway-updates - 2026-11-07
 
-Hardening day, no shipping: three HTTP/2 connection-pool deadlock/stall fixes landed inside ~90 minutes, GCP `backendAuth` tokens and OTLP access-log bodies merged, Bedrock Mantle got two param fixes — **20 PRs merged across 2 repos, still no release since v1.7.0**.
+Protocol-compatibility day: the OpenAPI MCP bridge finally negotiates `initialize` (unblocks Copilot Studio), a2a agent-card paths stop doubling, gRPC local-500s become retryable — **18 PRs merged across 2 repos on Nov 6, still no release since v1.7.0**.
 
-_Window: merged `>=2026-11-05T11:00Z` (since the 2026-11-05 report). Active: [agentgateway](https://github.com/agentgateway/agentgateway), [website](https://github.com/agentgateway/website); `benchmarks`/`community` idle._
+_Window: merged `>=2026-11-06` (since the 2026-11-06 report). Active: [agentgateway](https://github.com/agentgateway/agentgateway), [website](https://github.com/agentgateway/website); `benchmarks`/`community` idle._
 
 ## Releases
 
@@ -10,50 +10,48 @@ _Window: merged `>=2026-11-05T11:00Z` (since the 2026-11-05 report). Active: [ag
 
 | Repo | Latest stable | Latest pre-release | Notes |
 | --- | --- | --- | --- |
-| [agentgateway](https://github.com/agentgateway/agentgateway/releases) | [v1.7.0](https://github.com/agentgateway/agentgateway/releases/tag/v1.7.0) (2026-10-27) | [v1.7.0-rc.1](https://github.com/agentgateway/agentgateway/releases/tag/v1.7.0-rc.1) (2026-10-26) | No 1.8 tag — all PRs below are nightly/`latest` only |
-| [website](https://github.com/agentgateway/website/releases) | [v1.7.0](https://github.com/agentgateway/website/releases/tag/v1.7.0) (2026-10-27) | – | No docs cut; ref-docs refresh [#1476](https://github.com/agentgateway/website/pull/1476) open |
+| [agentgateway](https://github.com/agentgateway/agentgateway/releases) | [v1.7.0](https://github.com/agentgateway/agentgateway/releases/tag/v1.7.0) (2026-10-27) | [v1.7.0-rc.1](https://github.com/agentgateway/agentgateway/releases/tag/v1.7.0-rc.1) (2026-10-26) | No 1.8 tag; everything below is nightly/`latest` only |
+| [website](https://github.com/agentgateway/website/releases) | [v1.7.0](https://github.com/agentgateway/website/releases/tag/v1.7.0) (2026-10-27) | – | No docs cut; ref-docs refreshed vs v1.7.0 ([#1476](https://github.com/agentgateway/website/pull/1476)) |
 | benchmarks · community | None | – | Idle |
 
 ## Highlights
 
-- **HTTP/2 pool stabilized** — three fixes on pool code merged 2 days ago (from #4273; author: "not impacting any release"): deadlock when a connection dies during the capacity check [#4325](https://github.com/agentgateway/agentgateway/pull/4325), deadlock when a handed-off connection's request dies at once [#4323](https://github.com/agentgateway/agentgateway/pull/4323) (closes #4317), waiters left asleep when the peer stream limit dips then recovers [#4326](https://github.com/agentgateway/agentgateway/pull/4326). Re-test long-lived LLM/MCP streams on nightly — likely the "occasionally wedged upstream" cause.
-- **GCP identity end-to-end** — [#4279](https://github.com/agentgateway/agentgateway/pull/4279) (+1359/−487, 23 files): `backendAuth` can send the GCP ID token in `Proxy-Authorization`, so IAP authorizes the gateway while passing the caller's `Authorization` header through untouched. Unblocks "MCP behind IAP without losing end-user identity".
-- **OTLP access logs usable** — [#4312](https://github.com/agentgateway/agentgateway/pull/4312): records went out with `body: {}` and no `timeUnixNano` (blank events at ingest); now `body = "POST /v1/messages 200"` + emit time. Update the OTEL slide.
-- **Failover virtual models described** — [#4313](https://github.com/agentgateway/agentgateway/pull/4313): `GET /v1/models` now reports `context_window`/`max_tokens`/`input_modalities` for failover models (were `null`), so auto-trimming clients behave the same for every virtual-model type.
-- **Bedrock / Mantle** — [#4310](https://github.com/agentgateway/agentgateway/pull/4310) rewrites `max_tokens`→`max_completion_tokens` for gpt models on Mantle (was `400 unsupported_parameter`); open follow-ups on local `CountTokens` fallback and always-on-Claude thinking (see watch list).
-- **Helm CRD size fix** — [#4319](https://github.com/agentgateway/agentgateway/pull/4319) renders CRDs as compact JSON at packaging (926→767 KB) after Helm's secret-storage limit broke CI in #4205. Caveat: repo-local `helm install` breaks once CRDs cross the limit again.
-- **Yesterday's loose ends** — stdio MCP requests honor timeouts [#4305](https://github.com/agentgateway/agentgateway/pull/4305); `dns.maxTTL` exposed, closes #2810 [#4304](https://github.com/agentgateway/agentgateway/pull/4304); rmcp 3.9 [#4318](https://github.com/agentgateway/agentgateway/pull/4318).
-- **K8s + UI** — ReferenceGrant honored for CA lookup [#4315](https://github.com/agentgateway/agentgateway/pull/4315) (+318/−1): cross-namespace cert refs need the grant; UI errors now show in the editor drawer [#4324](https://github.com/agentgateway/agentgateway/pull/4324).
-- **Catalog churn** — [#4306](https://github.com/agentgateway/agentgateway/pull/4306) merged, next bump [#4331](https://github.com/agentgateway/agentgateway/pull/4331) up, new provider "Fortytwo" [#4333](https://github.com/agentgateway/agentgateway/pull/4333). Don't hardcode model IDs.
+- **MCP behind Copilot Studio works** — [#4328](https://github.com/agentgateway/agentgateway/pull/4328) (fixes #4321): the OpenAPI→MCP adapter answered `initialize` with rmcp's default `ProtocolVersion::LATEST` (`2026-07-28`), which has *no* initialize handshake; clients asking for an initialize-era version (`2025-11-25`) got a modern-only protocol and failed on routing headers / `_meta`. The requested version is now echoed when known, else it falls back to `LATEST_WITH_INITIALIZE`.
+- **a2a agent cards stop doubling paths** — [#4329](https://github.com/agentgateway/agentgateway/pull/4329) (fixes #3500): backends advertising interface URLs that already carry the public gateway path produced `/a2a/agents/supervisor/a2a/agents/supervisor/rpc`; the gateway's own agent path is stripped first.
+- **gRPC failures become retryable** — [#4226](https://github.com/agentgateway/agentgateway/pull/4226): `ServiceNotFound`, `InvalidBackendType`, `BackendDoesNotExist` mapped to `Unknown` (clients don't retry); now `Unavailable`. Matters for agent-to-agent gRPC mid-rollout.
+- **Observability** — [#4316](https://github.com/agentgateway/agentgateway/pull/4316) always includes standard log attributes (cleaner Loki/OTLP); [#4334](https://github.com/agentgateway/agentgateway/pull/4334) adds `config.logging.database.enabled` (default `true`) to switch DB log persistence off, clarified by [#4337](https://github.com/agentgateway/agentgateway/pull/4337) — handy for "no database on the demo laptop".
+- **UI** — [#4322](https://github.com/agentgateway/agentgateway/pull/4322) (fixes #2658): the XDS Routes table/drawer counted only *inline* policies, so `targetRef`-attached `AgentgatewayPolicy` showed "Policies: 0"; [#4332](https://github.com/agentgateway/agentgateway/pull/4332) serializes the API-key policy as `apiKey` (was `aPIKey` in `/config_dump`).
+- **1.8 contents mapped** — [website#1482](https://github.com/agentgateway/website/pull/1482) folds every pr-tracker release note into one PR: 1.8 breaking changes (upstream #4198, #4185/#4188), features (MCP outcome metric #4182, `upstreamCalls` CEL #4044) and held-for-cut entries — best preview of 1.8 so far.
+- **Docs pipeline repaired** — [website#1479](https://github.com/agentgateway/website/pull/1479): the upstream CRD move to `files/crds/` broke nightly doc-tests (34 schema failures) and the kubespec widget; workflows now read `files/crds/` with a `templates/` fallback for pre-1.8 cuts. Theme → `docs-theme-extras` v0.4.1 ([#1483](https://github.com/agentgateway/website/pull/1483)).
+- **Build + catalog** — [#4338](https://github.com/agentgateway/agentgateway/pull/4338) fixes the FIPS build (bindgen locked to syn 3 but paired with syn-2-based `prettyplease` 0.2.37 → 0.3.0); [#4331](https://github.com/agentgateway/agentgateway/pull/4331) models.dev refresh ("Nemotron 3 Ultra", pricing added) — don't hardcode model IDs.
 
 ## Merged PRs by repo
 
-### agentgateway (15) — most significant first
+### agentgateway (11)
 
 | Repo | PR # | Title | Author | Merged |
 | --- | --- | --- | --- | --- |
-| agentgateway | [#4325](https://github.com/agentgateway/agentgateway/pull/4325) | h2: avoid deadlock when connection dies during capacity check | howardjohn | 2026-11-05 |
-| agentgateway | [#4323](https://github.com/agentgateway/agentgateway/pull/4323) | h2: avoid deadlock when giving connection while request dies | howardjohn | 2026-11-05 |
-| agentgateway | [#4326](https://github.com/agentgateway/agentgateway/pull/4326) | h2: wake waiters left behind when the peer limit dips and recovers | howardjohn | 2026-11-05 |
-| agentgateway | [#4279](https://github.com/agentgateway/agentgateway/pull/4279) | auth: allow gcp tokens in backendAuth credentials | onematchfox | 2026-11-05 |
-| agentgateway | [#4312](https://github.com/agentgateway/agentgateway/pull/4312) | feat: give OTLP access log records a body and a timestamp | Quentin-M | 2026-11-05 |
-| agentgateway | [#4313](https://github.com/agentgateway/agentgateway/pull/4313) | feat(llm): describe failover virtual models in the model list | Quentin-M | 2026-11-05 |
-| agentgateway | [#4310](https://github.com/agentgateway/agentgateway/pull/4310) | fix(bedrock): Mantle max_tokens → max_completion_tokens | Quentin-M | 2026-11-05 |
-| agentgateway | [#4319](https://github.com/agentgateway/agentgateway/pull/4319) | helm: render CRDs as compact JSON | jgreeer | 2026-11-05 |
-| agentgateway | [#4315](https://github.com/agentgateway/agentgateway/pull/4315) | Fix refgrant for CA lookup | howardjohn | 2026-11-05 |
-| agentgateway | [#4305](https://github.com/agentgateway/agentgateway/pull/4305) | mcp: respect timeout on stdio requests | howardjohn | 2026-11-05 |
+| agentgateway | [#4328](https://github.com/agentgateway/agentgateway/pull/4328) | fix(mcp): negotiate OpenAPI initialize protocol version | WillXing | 2026-11-06 |
+| agentgateway | [#4329](https://github.com/agentgateway/agentgateway/pull/4329) | fix(a2a): don't double already-public agent card interface paths | jamesilse | 2026-11-06 |
+| agentgateway | [#4226](https://github.com/agentgateway/agentgateway/pull/4226) | fix(proxy): answer a local 500 of a gRPC call as Unavailable | fiunchinho | 2026-11-06 |
+| agentgateway | [#4322](https://github.com/agentgateway/agentgateway/pull/4322) | fix(ui): count targetRef policies on dump routes | jamesilse | 2026-11-06 |
+| agentgateway | [#4334](https://github.com/agentgateway/agentgateway/pull/4334) | add ability to disable log persistence to a db | conradhanson | 2026-11-06 |
+| agentgateway | [#4316](https://github.com/agentgateway/agentgateway/pull/4316) | log: always include standard attributes | howardjohn | 2026-11-06 |
+| agentgateway | [#4332](https://github.com/agentgateway/agentgateway/pull/4332) | fix: serialize API key policy name correctly | warjiang | 2026-11-06 |
+| agentgateway | [#4338](https://github.com/agentgateway/agentgateway/pull/4338) | build: give bindgen a prettyplease on its own syn (FIPS) | markuskobler | 2026-11-06 |
 
-+5 more: [#4320](https://github.com/agentgateway/agentgateway/pull/4320) stale condition, [#4318](https://github.com/agentgateway/agentgateway/pull/4318) rmcp 3.9, [#4304](https://github.com/agentgateway/agentgateway/pull/4304) dns maxTTL, [#4324](https://github.com/agentgateway/agentgateway/pull/4324) UI drawer errors, [#4306](https://github.com/agentgateway/agentgateway/pull/4306) catalog.
++3 more: [#4336](https://github.com/agentgateway/agentgateway/pull/4336) fuzz build fix, [#4337](https://github.com/agentgateway/agentgateway/pull/4337) logging-db doc clarify, [#4331](https://github.com/agentgateway/agentgateway/pull/4331) model catalog.
 
-### website (5)
+### website (7)
 
 | Repo | PR # | Title | Author | Merged |
 | --- | --- | --- | --- | --- |
-| website | [#1474](https://github.com/agentgateway/website/pull/1474) | Check Helm values in schema doc tests | kristin-kronstain-brown | 2026-11-05 |
-| website | [#1471](https://github.com/agentgateway/website/pull/1471) | Document hostRewrite None for transformation-set hosts | artberger | 2026-11-05 |
-| website | [#1470](https://github.com/agentgateway/website/pull/1470) | Streaming guardrail latency note | artberger | 2026-11-05 |
-| website | [#1465](https://github.com/agentgateway/website/pull/1465) | [Automated] Update reference docs (main) | github-actions[bot] | 2026-11-05 |
-| website | [#1473](https://github.com/agentgateway/website/pull/1473) | [Automated] Refresh product-UI screenshots | github-actions[bot] | 2026-11-05 |
+| website | [#1482](https://github.com/agentgateway/website/pull/1482) | Release notes: combine pr-tracker entries for 1.8 and 1.7 | kristin-kronstain-brown | 2026-11-06 |
+| website | [#1479](https://github.com/agentgateway/website/pull/1479) | Read agentgateway CRDs from files/crds after upstream move | kristin-kronstain-brown | 2026-11-06 |
+| website | [#1483](https://github.com/agentgateway/website/pull/1483) | Bump docs-theme-extras to v0.4.1 | kristin-kronstain-brown | 2026-11-06 |
+| website | [#1437](https://github.com/agentgateway/website/pull/1437) | [Automated] Draft docs: CEL outbound calls as `upstreamCalls` | github-actions[bot] | 2026-11-06 |
+
++3 automated: [#1447](https://github.com/agentgateway/website/pull/1447) MCP-outcome docs, [#1476](https://github.com/agentgateway/website/pull/1476) ref docs from v1.7.0, [#1477](https://github.com/agentgateway/website/pull/1477) UI screenshots.
 
 ### benchmarks · community
 
@@ -61,9 +59,9 @@ None in window.
 
 ## Watch list
 
-- **Breaking, still blocked** — [#4300](https://github.com/agentgateway/agentgateway/pull/4300) `(breaking) llm: default to native endpoints on AWS`: off `converse` to `/chat/completions`, `/messages`, `/responses`. Flag unchanged, **different IAM role** — re-test Bedrock streaming + tool-calling on omni-viper with the native-endpoint policy.
-- **Cost/metrics follow-ups open** — [#4311](https://github.com/agentgateway/agentgateway/pull/4311), [#4330](https://github.com/agentgateway/agentgateway/pull/4330).
-- **MCP / a2a open** — [#4328](https://github.com/agentgateway/agentgateway/pull/4328) OpenAPI-bridge `initialize` negotiation, [#4329](https://github.com/agentgateway/agentgateway/pull/4329) double-public agent-card paths.
-- **API-key surface** — shared budget via `metadata.budgetScope` [#4314](https://github.com/agentgateway/agentgateway/pull/4314), policy-name serialization [#4332](https://github.com/agentgateway/agentgateway/pull/4332): re-export demo YAML after upgrading nightly.
-- **Preview** — [website#1478](https://github.com/agentgateway/website/pull/1478) Elastic observability guides, [#4316](https://github.com/agentgateway/agentgateway/pull/4316) always include standard log attributes (nicer Loki/OTLP demos).
-- **Version drift** — 20+ PRs since v1.7.0 (compression, custom model sources, `uiBasePath`, Bedrock native-first, h2 pool) are nightly/`latest` only; pin `:latest`, note build date. [Open PRs](https://github.com/pulls?q=is%3Apr+is%3Aopen+org%3Aagentgateway).
+- **Breaking, still open** — [#4300](https://github.com/agentgateway/agentgateway/pull/4300) `(breaking) llm: default to native endpoints on AWS` (off `converse` → `/chat/completions`, `/messages`, `/responses`; **different IAM role**), [#4213](https://github.com/agentgateway/agentgateway/pull/4213) `(breaking) llm: custom provider formats configure endpoints instead of gating them`. Re-test Bedrock streaming + tool-calling on omni-viper before either lands.
+- **Guardrails** — [#4345](https://github.com/agentgateway/agentgateway/pull/4345) run guardrails on errors and server-initiated MCP messages; [#4341](https://github.com/agentgateway/agentgateway/pull/4341) webhook writeback without clobbering non-text content. Security-demo relevant.
+- **Auth/budget** — [#4343](https://github.com/agentgateway/agentgateway/pull/4343) keep API-key budget across key regeneration; [#4142](https://github.com/agentgateway/agentgateway/pull/4142) max trust age for remote JWT signing keys.
+- **LLM/CRD** — [#4344](https://github.com/agentgateway/agentgateway/pull/4344) missing `finish_reason` = failure, not stop; [#4346](https://github.com/agentgateway/agentgateway/pull/4346) reject duplicate model names per router; [#4339](https://github.com/agentgateway/agentgateway/pull/4339) CRD fix for `authorization.matchExpressions` (regenerate ref docs).
+- **Docs incoming** — [website#1484](https://github.com/agentgateway/website/pull/1484) SDK guide (Go + LiteLLM migration), [#1487](https://github.com/agentgateway/website/pull/1487)–[#1490](https://github.com/agentgateway/website/pull/1490) docs-vs-code fixes, [#1455](https://github.com/agentgateway/website/pull/1455) `ui://` delimiter.
+- **Version drift** — ~30 PRs since v1.7.0 (h2 pool fixes, GCP `backendAuth`, OTLP body, compression, `uiBasePath`, MCP/a2a) are nightly/`latest` only; pin `:latest` and note the build date. [Open PRs](https://github.com/pulls?q=is%3Apr+is%3Aopen+org%3Aagentgateway).
