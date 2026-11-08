@@ -1,58 +1,58 @@
-# kagent-updates - 2026-11-07
+# kagent-updates - 2026-11-08
 
-**Agent Substrate shipped v1.0.0 GA and kagent v1.0.0-rc3 landed with the full split-atelet upgrade runbook** — this is the pair to run omni-viper on for the Enterprise alpha12 cut; 19 PRs merged across kagent, substrate and website since yesterday's digest.
+**Substrate v1.0.1 shipped with the `kubectl ate` install/upgrade/uninstall/TUI/config work backported to `release-1.0`; kagent added Anthropic self-hosted sandboxes; 16 PRs merged across 3 repos.**
 
-Window: 2026-11-06 → 2026-11-07 (since the 2026-11-06 digest; kagent#3548 and substrate#136 reported there are not repeated).
+Window: 2026-11-07 → 2026-11-08 (since the 2026-11-07 digest; substrate#137 and the rc2→rc3 runbook items reported there are not repeated).
 
 ## Releases
 
 | Repo | Tag | Date | Highlights |
 | --- | --- | --- | --- |
-| substrate | [v1.0.0](https://github.com/kagent-dev/substrate/releases/tag/v1.0.0) | 2026-11-06 | **First GA** (`v0.6.0...v1.0.0`); charts at OCI version `1.0.0` (`substrate-crds`, `substrate`, `substrate-podcert`, `substrate-atelet`); amd64/arm64 images; `kubectl-ate` attached |
-| kagent | [v1.0.0-rc3](https://github.com/kagent-dev/kagent/releases/tag/v1.0.0-rc3) | 2026-11-06 | Pins Substrate **v1.0.0**; installer puts atelet in its own release; 7-step rc2→rc3 migration (Helm 3.17+, `--take-ownership`, `GoldenEgressPolicy` gate) |
+| substrate | [v1.0.1](https://github.com/kagent-dev/substrate/releases/tag/v1.0.1) | 2026-11-08 | Patch on the GA line (`v1.0.0...v1.0.1`): `kubectl ate` lifecycle + helm-e2e backport ([#148](https://github.com/kagent-dev/substrate/pull/148)), upgrade-e2e image-check fix ([#150](https://github.com/kagent-dev/substrate/pull/150)); OCI charts at `1.0.1` (`substrate-crds`, `substrate`, `substrate-podcert`), amd64/arm64 images, `kubectl-ate` attached with `.sha256` |
 
-Latest per main repo: substrate stable `v1.0.0` (last 0.x `v0.6.0`, newest RC `v1.0.0-rc4`), kagent `v0.10.6` (0.x) / `v1.0.0-rc3` (1.x pre-GA). No releases in window elsewhere in the org.
+Latest per main repo: substrate stable `v1.0.1` (last 0.x `v0.6.0`), kagent `v0.10.6` / `v1.0.0-rc3` (no new kagent tag in window), tools `v0.3.1` (outside window). No releases in window elsewhere in the org.
 
 ## Highlights
 
-- **Move off Substrate 0.6.** `v1.0.0` is the GA the alpha12 line should pin; the fork delta since 0.6 is large ([changelog](https://github.com/kagent-dev/substrate/compare/v0.6.0...v1.0.0)) and the notes carry the canonical `ate-setup` deploy command and Helm OCI path.
-- **rc3 breaks installs that skip the atelet migration.** Annotating `helm.sh/resource-policy=keep` *before* upgrading `substrate` is required, or the upgrade deletes the atelet DaemonSet; `GoldenEgressPolicy` must be in the `preview` list or ate-api-server rejects golden egress policies ([rc3 notes](https://github.com/kagent-dev/kagent/releases/tag/v1.0.0-rc3)).
-- **Runtime config no longer travels in env vars**: compiled config and Agent Cards ship as immutable Postgres-backed bundles over an actor-authenticated bootstrap RPC, verified and persisted before readiness — drops Substrate's per-value env limit (256 KiB bundle cap), with **no legacy env fallback**, so bootstrap-capable runtime images are mandatory ([kagent#3515](https://github.com/kagent-dev/kagent/pull/3515)). Rebuild BYO/`byo-ext` harness images.
-- **Breaking tracing rename**: the gateway user is recorded as `user.id`, not `enduser.id` (semconv v1.45). Dashboards, queries and access rules on `enduser.id` must change; a Collector `transform` rule is offered for one-release back-compat. Claude Code's native `user.id` is an account hash — read the trusted user off the invocation span ([kagent#3552](https://github.com/kagent-dev/kagent/pull/3552)).
-- **Crashed actors are recoverable**: `SessionService.RevertSession` reverts to the last durable snapshot as a durable `RUNTIME_OPERATION_REVERT` operation (new migration `000002_...sql`); requires `AccessUpdate`, so read-only shares can't trigger it ([kagent#3395](https://github.com/kagent-dev/kagent/pull/3395)).
-- **Slow MCP servers no longer kill resumes**: HTTP/SSE/stdio MCP connects are deferred to invocation preparation instead of startup, which was blowing router timeouts and pinning worker reservations; failed toolsets are omitted per-execution and retried later ([kagent#3560](https://github.com/kagent-dev/kagent/pull/3560)).
-- **Go API break for embedders**: `go/api/v1alpha3` shed controller-runtime and `database/sql`; `RemoteMCPServerSpec` loses `sql.Scanner`/`driver.Valuer` and the header/`ValueRef`/`ValueSource` resolvers moved to the tool service; `go/api/utils` is deleted ([kagent#3563](https://github.com/kagent-dev/kagent/pull/3563)).
-- **ModelConfig save 500 fixed** — API-key edits raced the controller's `Status.SecretHash` write; the handler retries on conflict ([kagent#3546](https://github.com/kagent-dev/kagent/pull/3546)). Also removes KMCP-scaffolder dead code left behind by #3223 ([kagent#3562](https://github.com/kagent-dev/kagent/pull/3562)).
-- **New demo asset**: Agent Substrate calculator at `/substrate-calculator` — wake-up time (new conversation / within 30 min / later) plus CPU, memory and snapshot sizing, measured on rc2 + gVisor ([website#697](https://github.com/kagent-dev/website/pull/697)).
-- **Upgrade CI is real again**: upgrade tests select rc3 (already split-atelet) and invoke four Harness fixtures per release across upgrade and rollback ([kagent#3558](https://github.com/kagent-dev/kagent/pull/3558)).
+- **Substrate finally has a one-command installer.** `kubectl ate install` applies the four releases in order from charts embedded in the binary, creates CA pools, identity secrets and object-store credentials, defaults to a single-replica evaluation PostgreSQL (`--postgres external` validates connection Secrets), stages Kata/Cloud Hypervisor assets for `--microvm`, and resumes an interrupted install; `kubectl ate status` lists releases and workloads ([#138](https://github.com/kagent-dev/substrate/pull/138)). This is the path to run omni-viper on instead of the manual `ate-setup` + Helm sequence.
+- **Upgrade/uninstall scripted against the version-skew policy.** `kubectl ate upgrade` goes cert controller → atelet → CRDs → substrate, keeps per-release values, refuses downgrades, skipped minors and CRD changes that would strand stored versions; `--dry-run` prints manifest diffs ([#139](https://github.com/kagent-dev/substrate/pull/139)). **Known gap: it does not roll WorkerPool worker images.** `uninstall` deletes WorkerPools then releases in reverse but keeps CRDs, CA keys, secrets and volumes unless `--include-crds`/`--purge`; the RustFS PVC is kept via `helm.sh/resource-policy: keep` *in the release manifest* — annotating the live PVC does nothing ([#140](https://github.com/kagent-dev/substrate/pull/140)).
+- **Flags → YAML config.** Install/upgrade/uninstall read one config (`-c install.yaml`) or stdin (`-c -`) with per-release `valuesFiles`/`values` (`releases.all` except `substrate-crds`). This **replaces** `--postgres`, `--object-store`, `--microvm`, `--microvm-asset-bucket`, `-f`, `--set`, `--timeout`; unknown fields are hard errors. Rewrite demo/CI scripts before the next redeploy ([#144](https://github.com/kagent-dev/substrate/pull/144)).
+- **Demo-friendly TUI**: live step list, Ctrl+C cancel, and a wizard that prints the equivalent command; `--no-tui`/`-v` stay plain ([#141](https://github.com/kagent-dev/substrate/pull/141)).
+- **New kagent capability — Anthropic self-hosted sandboxes.** A leader-elected controller loop polls Anthropic for sessions requesting sandboxes, provisions a sandbox running the `ant` CLI, receives bash tool calls, and suspends sandboxes whose CLI exited. All config via env vars; the author flags install UX as "quite bad" — demo-able, not turnkey ([kagent#3521](https://github.com/kagent-dev/kagent/pull/3521)).
+- **Egress credential providers chart-configurable** — merged to main *after* v1.0.1: `credentialProvider.enabled` gates the bundled k8s provider and its `k8s.io` route; `atenetEgress.extraCredentialProviders` adds `{name, address}` peers over the same mTLS, matching `ate-setup --credential-provider` (e.g. `credprovider-gcp-secret-manager`). No providers → injection fails closed; chart rejects `k8s.io`, duplicates, portless addresses ([substrate#152](https://github.com/kagent-dev/substrate/pull/152)).
+- **0.10.x can no longer hijack "latest"**: the `release/v0.10.x` workflow is `workflow_dispatch`-driven with tag validation and `make_latest: false` — previously each 0.10 patch stole the marker the CLI install script resolves ([kagent#3567](https://github.com/kagent-dev/kagent/pull/3567)).
+- **Canonical install one-liner is live**: `kagent.dev/install` 307-redirects to `scripts/get-kagent` on main, so `curl -sL https://kagent.dev/install | bash && kagent install` is the quick-start tab ([website#704](https://github.com/kagent-dev/website/pull/704)).
+- **Helm e2e now matches the PR e2e**: every suite on both runtimes, `egresscredinject` on both, `E2E_PARALLELISM=8`, 120-min job ([substrate#146](https://github.com/kagent-dev/substrate/pull/146)).
 
 ## Merged PRs by repo
 
 | Repo | PR | Title | Author | Merged |
 | --- | --- | --- | --- | --- |
-| kagent | [#3515](https://github.com/kagent-dev/kagent/pull/3515) | feat(runtime): bootstrap revision configuration from durable bundles | supreme-gg-gg | 2026-11-06 |
-| kagent | [#3552](https://github.com/kagent-dev/kagent/pull/3552) | feat(telemetry): record the trusted user as user.id | krisztianfekete | 2026-11-06 |
-| kagent | [#3395](https://github.com/kagent-dev/kagent/pull/3395) | feat(session): revert crashed runtimes through RevertSession | adalundhe | 2026-11-06 |
-| kagent | [#3560](https://github.com/kagent-dev/kagent/pull/3560) | adk/mcp: defer tool discovery until invocation | shashankram | 2026-11-06 |
-| kagent | [#3563](https://github.com/kagent-dev/kagent/pull/3563) | refactor(api): move MCP header resolution out of v1alpha3 | timflannagan | 2026-11-06 |
-| kagent | [#3546](https://github.com/kagent-dev/kagent/pull/3546) | fix: retry ModelConfig update when the controller writes status first | Charlesthebird | 2026-11-06 |
-| kagent | [#3555](https://github.com/kagent-dev/kagent/pull/3555) | chore(deps): upgrade Substrate to v1.0.0 | EItanya | 2026-11-06 |
-| kagent | [#3558](https://github.com/kagent-dev/kagent/pull/3558) | fix(ci): restore upgrade tests from RC3 | EItanya | 2026-11-06 |
-| kagent | [#3545](https://github.com/kagent-dev/kagent/pull/3545) | fix(ui): show when the Substrate lists were read, not a running age | Charlesthebird | 2026-11-06 |
-| kagent | [#3562](https://github.com/kagent-dev/kagent/pull/3562) | refactor: remove helpers orphaned by KMCP removal | timflannagan | 2026-11-06 |
-| substrate | [#137](https://github.com/kagent-dev/substrate/pull/137) | Sync upstream main through 94e0a26ac | EItanya | 2026-11-06 |
-| website | [#697](https://github.com/kagent-dev/website/pull/697) | Add an Agent Substrate calculator at /substrate-calculator | rinormaloku | 2026-11-06 |
-| website | [#698](https://github.com/kagent-dev/website/pull/698) | Document split Agent Substrate atelet release | Rachael-Graham | 2026-11-06 |
-| website | [#658](https://github.com/kagent-dev/website/pull/658) | Add reference for A2A metadata and extensions | Stevenjin8 | 2026-11-06 |
-| website | [#701](https://github.com/kagent-dev/website/pull/701) | Update kagent 1.x reference docs at v1.0.0-rc3 | github-actions[bot] | 2026-11-06 |
+| kagent | [#3521](https://github.com/kagent-dev/kagent/pull/3521) | Anthropic Self Hosted Sandboxes | Stevenjin8 | 2026-11-07 |
+| substrate | [#138](https://github.com/kagent-dev/substrate/pull/138) | kubectl-ate: add install and status commands | EItanya | 2026-11-07 |
+| substrate | [#139](https://github.com/kagent-dev/substrate/pull/139) | kubectl-ate: add upgrade command | EItanya | 2026-11-07 |
+| substrate | [#140](https://github.com/kagent-dev/substrate/pull/140) | kubectl-ate: add uninstall command | EItanya | 2026-11-07 |
+| substrate | [#144](https://github.com/kagent-dev/substrate/pull/144) | kubectl-ate: configure install/upgrade/uninstall with a config file | EItanya | 2026-11-07 |
+| substrate | [#141](https://github.com/kagent-dev/substrate/pull/141) | kubectl-ate: show install progress in a TUI | EItanya | 2026-11-07 |
+| substrate | [#148](https://github.com/kagent-dev/substrate/pull/148) | [release-1.0] Backport kubectl ate install, upgrade and uninstall | EItanya | 2026-11-07 |
+| substrate | [#152](https://github.com/kagent-dev/substrate/pull/152) | charts: let egress use other credential providers | EItanya | 2026-11-08 |
+| substrate | [#146](https://github.com/kagent-dev/substrate/pull/146) | helm-e2e: run every suite on both runtimes | EItanya | 2026-11-07 |
+| kagent | [#3567](https://github.com/kagent-dev/kagent/pull/3567) | ci(release): release v0.10.x by dispatch, never mark it latest | EItanya | 2026-11-07 |
+| website | [#704](https://github.com/kagent-dev/website/pull/704) | Add docs favicon and kagent.dev/install redirect | EItanya | 2026-11-07 |
+| substrate | [#149](https://github.com/kagent-dev/substrate/pull/149) / [#150](https://github.com/kagent-dev/substrate/pull/150) | Skip third-party images in the upgrade e2e image check (+ release-1.0) | EItanya | 2026-11-08 |
+| substrate | [#147](https://github.com/kagent-dev/substrate/pull/147) | ci: restore the Go build cache from main in run-tests and helm-e2e | EItanya | 2026-11-07 |
+| substrate | [#151](https://github.com/kagent-dev/substrate/pull/151) | docs: list substrate-atelet among the published charts | EItanya | 2026-11-08 |
+| kagent | [#3557](https://github.com/kagent-dev/kagent/pull/3557) | chore: add GitHub PR and issue creation skills | EItanya | 2026-11-08 |
 
-+4 more (website #699/#700 doc/theme, kagent #3556/#3559 unit-test CI): [search](https://github.com/search?q=org%3Akagent-dev+is%3Apr+is%3Amerged+merged%3A%3E%3D2026-11-06&type=pullrequests). No merged PRs in tools, doc2vec, kmcp, khook, mockllm, community, byo-ext.
+All 16 merged PRs shown. Only those two kagent main commits landed in window, so **kagent has not yet bumped to Substrate v1.0.1**. None in tools, doc2vec, kmcp, khook, mockllm, community, byo-ext.
 
 ## Watch list
 
-- **Pin for alpha12**: kagent main is on Substrate `v1.0.0` ([#3555](https://github.com/kagent-dev/kagent/pull/3555)); rehearse the 7-step rc2→rc3 runbook on omni-viper before cutting alpha12, and expect a kagent `v1.0.0` tag shortly.
-- **Helm 3.17+ is now a hard requirement** for the atelet migration (`--take-ownership`); the keep-annotation step is not optional ([rc3 notes](https://github.com/kagent-dev/kagent/releases/tag/v1.0.0-rc3)).
-- **Scheduling changed on both atelet charts**: upstream critical priority class + namespace quota, and the staging volume's eviction limit is gone ([substrate#137](https://github.com/kagent-dev/substrate/pull/137)) — check pending-atelet behaviour on a one-node omni-viper.
-- **Docs caveats before demoing the split release**: object-store/telemetry config, plus a limitation on git and S3 artifact sources ([website#698](https://github.com/kagent-dev/website/pull/698)).
-- **Doc pins** are kagent `1.0.0-rc3` / agent-substrate `1.0.0` / kagent-tools `0.3.0` / max-kube `1.35` ([website#701](https://github.com/kagent-dev/website/pull/701)) — verify copied `helm install --version` lines resolve.
-- **Still open**: Substrate unsupported on kagent 0.10.x, and the arm64 Wolfi gVisor PAC issue.
+- **Pin substrate `v1.0.1` for alpha12**, not `v1.0.0` — the `kubectl ate` lifecycle is what makes a repeatable omni-viper rebuild possible. kagent main still pins `v1.0.0` ([#3555](https://github.com/kagent-dev/kagent/pull/3555)); watch for the bump and a kagent `v1.0.0` tag.
+- **Upgrade won't roll WorkerPool worker images** — still manual per the skew policy after atelet; verify on omni-viper.
+- **#152 chart values are not in v1.0.1** — need `main`/`1.0.2` before testing `credentialProvider.enabled: false` or BYO providers; confirm fail-closed with zero providers.
+- **Install surface still moving**: open follow-ups [#153](https://github.com/kagent-dev/substrate/pull/153) (typed postgres/objectStore config) and [#154](https://github.com/kagent-dev/substrate/pull/154) (cluster access and charts from the caller) — retest any saved `-c` config after they land.
+- **Anthropic sandboxes**: env-var-only config, docs still open at [website#706](https://github.com/kagent-dev/website/pull/706); single leader-elected controller, so test controller restarts before demoing suspend/resume.
+- **Docs pre-GA**: `1.0.0 release switchover` ([website#703](https://github.com/kagent-dev/website/pull/703)), install-docs update ([website#705](https://github.com/kagent-dev/website/pull/705)) and the onboarding PR itself ([kagent#3566](https://github.com/kagent-dev/kagent/pull/3566)) are open — verify the copied one-liner before a customer walkthrough.
+- **Open fixes worth a local test build**: interrupted checkpoint recovery ([#3519](https://github.com/kagent-dev/kagent/pull/3519)), Postgres login retries as Unavailable ([#3550](https://github.com/kagent-dev/kagent/pull/3550)), Anthropic streaming tool-call order ([#3568](https://github.com/kagent-dev/kagent/pull/3568)), duplicate `RemoteMCPServer` headers ([#3564](https://github.com/kagent-dev/kagent/pull/3564)).
+- **Carried over**: Substrate unsupported on kagent 0.10.x; arm64 Wolfi gVisor PAC issue; tools `LOG_LEVEL` fix still open ([tools#100](https://github.com/kagent-dev/tools/pull/100)).
