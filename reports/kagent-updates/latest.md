@@ -1,65 +1,52 @@
-# kagent-updates - 2026-11-10
+# kagent-updates - 2026-11-11
 
-**kagent v1.0.0 GA shipped — first stable release, with the new `curl | bash` → `kagent install` onboarding and default Harnesses; substrate landed declarative install/upgrade values (`#165`, backported in `#167`); doc2vec v2.17.4 published. ~31 PRs merged across 4 repos.**
+**No new releases anywhere — kagent still v1.0.0 GA — but main moved: harness/sandbox images jump to Alpine 3.24 (`#3618`), current Gemini IDs enter the model picker (`#3525`), and the docs finally catch up to 1.0 with a UI Policies page, A2A `ListTasks`, Foundry-Claude and PDB/`extraObjects` guidance (`website#719`). 15 PRs merged org-wide, 11 new since yesterday (kagent 5, website 6).**
 
-Window: 2026-11-09 → 2026-11-10. Not repeated from the 2026-11-09 digest: substrate `#153`/`#154`/`#157`/`#159`/`#162`/`#163`, tools `#98`, website `#691`/`#707`, kagent `#3340`.
+Window: 2026-11-10 → 2026-11-11 (since `latest.md` @ 11-10). Not repeated: substrate [#167](https://github.com/kagent-dev/substrate/pull/167), website [#705](https://github.com/kagent-dev/website/pull/705), doc2vec [#142](https://github.com/kagent-dev/doc2vec/pull/142), kagent [#3577](https://github.com/kagent-dev/kagent/pull/3577).
 
 ## Releases
 
-| Repo | Tag | Date | Highlights |
-| --- | --- | --- | --- |
-| kagent | [v1.0.0](https://github.com/kagent-dev/kagent/releases/tag/v1.0.0) | 2026-11-09 | **First GA.** v1 API (Harness / AgentTemplate / Agent / Session / SandboxTemplate), Substrate-backed runtimes, Claude/Codex/BYO harnesses, checkpoints, egress policies, auth ([compare v0.9.10...v1.0.0](https://github.com/kagent-dev/kagent/compare/v0.9.10...v1.0.0)) |
-| kagent | [v1.0.0-rc4](https://github.com/kagent-dev/kagent/releases/tag/v1.0.0-rc4) | 2026-11-09 | last RC before GA, hours earlier |
-| doc2vec | [v2.17.4](https://github.com/kagent-dev/doc2vec/releases/tag/v2.17.4) | 2026-11-10 | survives browserless restarts, skips oversized pages pre-render |
-| substrate | [v1.0.1](https://github.com/kagent-dev/substrate/releases/tag/v1.0.1) (unchanged) | 2026-11-08 | no new tag; `release-1.0` is now ahead of it via `#167` — a `v1.0.2` is queued |
-| tools | [v0.3.1](https://github.com/kagent-dev/tools/releases/tag/v0.3.1) (unchanged) | 2026-11-04 | — |
-| kmcp | [v0.4.0](https://github.com/kagent-dev/kmcp/releases/tag/v0.4.0) (unchanged) | 2026-09-17 | no activity in window |
+No releases published, and none pending (kagent and substrate publish RCs as non-prerelease; both still list rc4 as their last). Current tips: [kagent v1.0.0](https://github.com/kagent-dev/kagent/releases/tag/v1.0.0) (11-09, nothing tagged since — work is landing on `main`), [substrate v1.0.1](https://github.com/kagent-dev/substrate/releases/tag/v1.0.1) (11-08; `release-1.0` is ahead via [#167](https://github.com/kagent-dev/substrate/pull/167)), [doc2vec v2.17.4](https://github.com/kagent-dev/doc2vec/releases/tag/v2.17.4) (11-10, reported yesterday), [tools v0.3.1](https://github.com/kagent-dev/tools/releases/tag/v0.3.1), [kmcp v0.4.0](https://github.com/kagent-dev/kmcp/releases/tag/v0.4.0).
 
 ## Highlights
 
-- **kagent 1.0 is the demo headline.** GA pins Substrate **`v1.0.0`** — `go/go.mod` on `main` still reads `replace go.ate.dev/substrate => github.com/kagent-dev/substrate v1.0.0`. For omni-viper: the "Agent Substrate 0.6" line is *not* what kagent 1.0 tracks; 1.0 pairs with substrate 1.0.x. Expect an Enterprise alpha on `v1.0.0` + substrate `v1.0.1`/`v1.0.2`.
-- **Install is now two lines** — `export OPENAI_API_KEY=...` then `curl -sL https://kagent.dev/install | bash && kagent install` ([#3566](https://github.com/kagent-dev/kagent/pull/3566)). Ships default Harnesses `kagent-default` / `codex-default` / `claude-default`, `--provider` (no CLI config file), enables gRPC reflection, prints next steps. Biggest pre-sales change in this window.
-- **Breaking for existing Harnesses:** `workload.command`/`args` are now **rejected** on Claude and Codex harnesses (previously silently dropped, so agents reported Ready while running the image entrypoint); empty lists rejected everywhere. Existing objects fail validation on their *next* update ([#3616](https://github.com/kagent-dev/kagent/pull/3616)).
-- **Delegated identity on MCP calls fixed:** MCP/HTTP context wrapping hid the native ADK session ID, so STS cache lookups missed and outbound requests lost delegated identity ([#3605](https://github.com/kagent-dev/kagent/pull/3605), backport [#3612](https://github.com/kagent-dev/kagent/pull/3612)). Go ADK now honours `runtimeDefaults.telemetry.captureContent` — model spans finally carry prompts/replies ([#3592](https://github.com/kagent-dev/kagent/pull/3592), backport [#3611](https://github.com/kagent-dev/kagent/pull/3611)). Both tagged `cherrpick-1.0`.
-- **Substrate install is declarative now:** `ResetThenReuseValues` dropped, so values come from chart + config only — stale values get removed and switching `postgres`/`objectStore` mode on upgrade works. But `install` refuses once the `substrate` release exists, and **`upgrade` requires the same `-c` config used at install** ([#165](https://github.com/kagent-dev/substrate/pull/165)); all three installer PRs reached `release-1.0` via [#167](https://github.com/kagent-dev/substrate/pull/167).
-- **v1.0.x got 7 cherry-picks** ([#3586](https://github.com/kagent-dev/kagent/pull/3586)) including `RevertSession` for crashed runtimes (#3395, customer-driven) and deferring MCP tool discovery so slow discovery no longer fails agent resumes (#3560).
-- **Docs flipped to 1.0:** `latest` now points at 1.0.x ([#703](https://github.com/kagent-dev/website/pull/703)), reference docs regenerated at `v1.0.0` with new claude/codex/golang-adk image digests ([#715](https://github.com/kagent-dev/website/pull/715)), install docs simplified ([#705](https://github.com/kagent-dev/website/pull/705)), Anthropic self-hosted sandboxes published ([#706](https://github.com/kagent-dev/website/pull/706)), plus the kagent 1.0 launch post ([#714](https://github.com/kagent-dev/website/pull/714)).
-- **Python dep drift to watch:** google-adk allowed up to 2.13.0, which **defaults telemetry to OTel GenAI v2 and removes the `call_llm` span** (opt out via `ADK_TELEMETRY_SCHEMA_VERSION_OPT_IN=otel_semconv_1_36`) ([#3581](https://github.com/kagent-dev/kagent/pull/3581)). Dashboards on the old schema will go quiet.
+- **Harness/sandbox images: Alpine 3.22 → 3.24.** The main, claude/codex harness and sandbox-guest Dockerfiles now share one `ARG ALPINE_VERSION=3.24` fed by the Makefile; the nested files had drifted because Dependabot only watches `/go` ([#3618](https://github.com/kagent-dev/kagent/pull/3618), [commit](https://github.com/kagent-dev/kagent/commit/10dd11f5a693bb2f38e6209d5287b553bb40b3d6)). For omni-viper: those tags off `main` get **new digests on a new base** — re-pin digest-pinned demo YAML.
+- **Gemini picker current:** `gemini-4-argon` + `gemini-3.8-flash` (function calling) added to the Gemini and Vertex Gemini catalogs; Bedrock untouched ([#3525](https://github.com/kagent-dev/kagent/pull/3525)).
+- **Stop actually stops:** Stop before the first status frame sent no `CancelTask`, so the runtime ran (and billed) the turn; the stream now waits for the task id, then cancels ([#3623](https://github.com/kagent-dev/kagent/pull/3623)). Gap: a hard reload before the task is named still loses it.
+- **The 1.0 docs gap closed** in "Various updates" ([#719](https://github.com/kagent-dev/website/pull/719)), `latest` **and** `main` — most demo-relevant item of the day:
+  - **EgressPolicy CRUD in the UI** (new **Policies → Egress Policies** page; auth None / Secret key / Actor JWT) + a verify-by-`/dev/tcp` recipe (no `curl` in the runtime image).
+  - **A2A `ListTasks` documented** — recover a lost task ID via `contextId`/`status`/paging; `pageSize` >100 errors rather than capping. Push rules: any 2xx acks (redirect = failure), 10 attempts per state, `config.push.*` knobs.
+  - **Azure AI Foundry can serve Claude:** `foundry.apiFormat: Anthropic` → `<endpoint>/anthropic/v1/messages`; `apiVersion` ignored there.
+  - **Ops:** `controller.pdb.*` (`minAvailable` needs `maxUnavailable: null`; chart fails if both set) and **`extraObjects`** — ship your ExternalSecret/HTTPRoute/NetworkPolicy inside the kagent release, rendered with `tpl`.
+  - Crash recovery clarified: a `CRASHED` actor is recovered only via **`RevertSession` (SessionService gRPC)** — no CLI/UI — and the in-flight turn is marked failed.
+- **Docs-site security bumps taken:** Next.js 16.4.3 → 16.4.5 (Nov-3 advisory batch: `'use cache'` cross-tenant disclosure, cache poisoning, Edge HttpOnly cookie leak, SVG bypass); `@opennextjs/cloudflare` 1.20.16 now *requires* ≥16.4.5 ([#717](https://github.com/kagent-dev/website/pull/717)).
+- Intake tightened: blank issues maintainers-only; the template chooser links the private `SECURITY.md` path ([#3619](https://github.com/kagent-dev/kagent/pull/3619)).
 
 ## Merged PRs by repo
 
 | Repo | PR | Title | Author | Merged |
 | --- | --- | --- | --- | --- |
-| kagent | [#3566](https://github.com/kagent-dev/kagent/pull/3566) | feat: improve install and first-agent onboarding | EItanya | 2026-11-09 |
-| kagent | [#3616](https://github.com/kagent-dev/kagent/pull/3616) | fix(api): reject unsupported Harness workload overrides | timflannagan | 2026-11-09 |
-| kagent | [#3605](https://github.com/kagent-dev/kagent/pull/3605) | adk/sts: preserve session identity on outbound MCP requests | shashankram | 2026-11-09 |
-| kagent | [#3592](https://github.com/kagent-dev/kagent/pull/3592) | adk/telemetry: honor runtime content capture settings | shashankram | 2026-11-09 |
-| kagent | [#3586](https://github.com/kagent-dev/kagent/pull/3586) | fix: backport pre-release fixes to v1.0.x (7 PRs) | EItanya | 2026-11-09 |
-| kagent | [#3611](https://github.com/kagent-dev/kagent/pull/3611) / [#3612](https://github.com/kagent-dev/kagent/pull/3612) | [backport] telemetry capture + STS session identity | shashankram | 2026-11-09 |
-| kagent | [#3574](https://github.com/kagent-dev/kagent/pull/3574) | fix(adk): default overlapSize to 0 when compactionInterval set | subhaballe | 2026-11-09 |
-| kagent | [#3581](https://github.com/kagent-dev/kagent/pull/3581) | deps: google-adk >=2.13.0 (breaking OTel semconv default) | dependabot | 2026-11-09 |
-| kagent | [#3606](https://github.com/kagent-dev/kagent/pull/3606) | docs: document release branch backport policy | timflannagan | 2026-11-09 |
-| kagent | [#3590](https://github.com/kagent-dev/kagent/pull/3590) / [#3591](https://github.com/kagent-dev/kagent/pull/3591) | cleanup: drop unused ConfigHashAnnotation, KubeClientWrapper | timflannagan | 2026-11-09 |
-| kagent | 9 dependabot PRs | [#3576](https://github.com/kagent-dev/kagent/pull/3576) [#3577](https://github.com/kagent-dev/kagent/pull/3577) [#3578](https://github.com/kagent-dev/kagent/pull/3578) [#3580](https://github.com/kagent-dev/kagent/pull/3580) [#3582](https://github.com/kagent-dev/kagent/pull/3582) [#3583](https://github.com/kagent-dev/kagent/pull/3583) [#3584](https://github.com/kagent-dev/kagent/pull/3584) | dependabot | 2026-11-09 |
-| substrate | [#165](https://github.com/kagent-dev/substrate/pull/165) | install: make install and upgrade values declarative | EItanya | 2026-11-09 |
-| substrate | [#167](https://github.com/kagent-dev/substrate/pull/167) | [release-1.0] backport step lists, Options.Version, declarative values | EItanya | 2026-11-10 |
-| website | [#703](https://github.com/kagent-dev/website/pull/703) | 1.0.0 release switchover (`latest` → 1.0.x) | Rachael-Graham | 2026-11-09 |
-| website | [#715](https://github.com/kagent-dev/website/pull/715) | reference docs at v1.0.0 / kmcp v0.4.0 (conrefs changed) | github-actions | 2026-11-09 |
-| website | [#714](https://github.com/kagent-dev/website/pull/714) | Blog: kagent 1.0 Is Here, agents on Agent Substrate | sebbycorp | 2026-11-09 |
-| website | [#705](https://github.com/kagent-dev/website/pull/705) | simplify the kagent install docs for kagent#3566 | EItanya | 2026-11-10 |
-| website | [#706](https://github.com/kagent-dev/website/pull/706) | Anthropic self-hosted sandboxes | Stevenjin8 | 2026-11-09 |
-| website | [#710](https://github.com/kagent-dev/website/pull/710) [#711](https://github.com/kagent-dev/website/pull/711) [#712](https://github.com/kagent-dev/website/pull/712) [#713](https://github.com/kagent-dev/website/pull/713) | build fixes, link fixes, stop tracking Python bytecode | Nadine2016, kristin-kronstain-brown | 2026-11-09 |
-| doc2vec | [#142](https://github.com/kagent-dev/doc2vec/pull/142) | survive browserless restarts, skip oversized pages (v2.17.4) | djannot | 2026-11-10 |
+| kagent | [#3618](https://github.com/kagent-dev/kagent/pull/3618) | build: one Alpine version across the Go images (→3.24) | VISHNU0906 | 11-11 |
+| kagent | [#3525](https://github.com/kagent-dev/kagent/pull/3525) | feat(models): suggest current Gemini model IDs | jayunit100 | 11-10 |
+| kagent | [#3623](https://github.com/kagent-dev/kagent/pull/3623) | fix(ui): cancel the task when Stop is pressed before it is named | alan-bentley-pgh | 11-10 |
+| kagent | [#3619](https://github.com/kagent-dev/kagent/pull/3619) | chore: restrict blank issues to maintainers | timflannagan | 11-10 |
+| kagent | [#3046](https://github.com/kagent-dev/kagent/pull/3046) | chore(make): print Python and Buf versions | yashrajshuklaaa | 11-11 |
+| website | [#719](https://github.com/kagent-dev/website/pull/719) | Various updates (Policies UI, `ListTasks`, Foundry-Claude, PDB, `extraObjects`) | Nadine2016 | 11-10 |
+| website | [#721](https://github.com/kagent-dev/website/pull/721) | Link fixes | Nadine2016 | 11-10 |
+| website | [#720](https://github.com/kagent-dev/website/pull/720) / [#702](https://github.com/kagent-dev/website/pull/702) | [Automated] Refresh kagent UI screenshots | github-actions[bot] | 11-10 |
+| website | [#717](https://github.com/kagent-dev/website/pull/717) | deps: npm-minor-patch ×6 (next 16.4.5 security release) | dependabot[bot] | 11-10 |
+| website | [#716](https://github.com/kagent-dev/website/pull/716) | deps: @playwright/test 1.64.1 → 1.65.0 | dependabot[bot] | 11-10 |
 
-All merged PRs in window shown. None in khook, mockllm, community, byo-ext.
+All PRs merged in window are shown, except the four already reported on 11-10 listed at the top. Nothing merged in tools, kmcp, khook, mockllm, mockmcp, community, byo-ext.
 
-## Watch list (kagent Enterprise alpha12 / Substrate on omni-viper)
+## Watch list (kagent Enterprise alpha12 / Agent Substrate on omni-viper)
 
-- **Pin vs. reality:** kagent 1.0.0 pins substrate `v1.0.0`, but substrate `release-1.0` now carries the installer library, `Options.Version` and declarative values via `#159`/`#167` with **no tag yet**. Test installer-driven installs off a `v1.0.2`/`main` chart, not the GA tag.
-- **`#165` behaviour change:** keep the install config with the cluster — `upgrade` without `-c` silently applies bundled defaults onto an external DB. `install` refuses on a deployed release; use `upgrade`, and `--dry-run` first.
-- **`#3616` CEL rules are a silent breaking change** for any saved Claude/Codex Harness with `workload.command`/`args`; audit that YAML before the alpha upgrade.
-- **Runtime image digests moved** with the v1.0.0 docs regeneration (`claude-harness`, `codex-harness`, `golang-adk`) — re-pin if demo YAML pins by digest.
-- **Security-adjacent, still open:** runtime certificate trust for v0.10.x ([#3320](https://github.com/kagent-dev/kagent/pull/3320)); extra egress CAs for the gateway upstream TLS ([substrate#101](https://github.com/kagent-dev/substrate/pull/101)).
-- **Open PRs worth exercising on omni-viper:** per-Harness CPU/memory limits [#3625](https://github.com/kagent-dev/kagent/pull/3625), session ID to MCP servers in a configurable header [#3628](https://github.com/kagent-dev/kagent/pull/3628), forward caller credential on MCP/model calls [#3018](https://github.com/kagent-dev/kagent/pull/3018), declarative graph workflows for ADK Go 2.x [#3344](https://github.com/kagent-dev/kagent/pull/3344), interrupted-checkpoint recovery [#3519](https://github.com/kagent-dev/kagent/pull/3519), opt-in crash recovery on send [#3399](https://github.com/kagent-dev/kagent/pull/3399), AKS installer profile [substrate#161](https://github.com/kagent-dev/substrate/pull/161).
-- **Follow-ups from `#3566` not yet done:** a `kagent.dev/install` redirect + favicon, and removing the now-obsolete `grpcReflection` step for plain Helm installs — don't quote the quickstart verbatim mid-flux.
-- Carried over: substrate `upgrade` still doesn't roll WorkerPool images; `uninstall` keeps CRDs/CA keys/PVC without `--include-crds`/`--purge`; doc2vec can't yet pre-skip compressed/chunked responses, and the browserless 4Gi limit (incl. its memory-backed `/dev/shm`) still counts against one budget.
+- **Cross-namespace WorkerPools (draft) — matches omni-viper's tenant layout:** `substrate.workerPoolNamespaces` lets a Harness use WorkerPools in another namespace ([#3631](https://github.com/kagent-dev/kagent/pull/3631)); exercise off `main`.
+- **API-surface churn:** typed refs for models/MCP servers ([#3604](https://github.com/kagent-dev/kagent/pull/3604)) + UI keeps group/kind ([#3607](https://github.com/kagent-dev/kagent/pull/3607)); the user-set `kagent.dev/prompt-library` label moves to `v1alpha3.PromptLibraryLabel`, i.e. becomes reviewed API ([#3638](https://github.com/kagent-dev/kagent/pull/3638)).
+- **Actor/session lifecycle, all open:** suspend after abandoned delivery ([#3635](https://github.com/kagent-dev/kagent/pull/3635)), interrupted-checkpoint recovery ([#3519](https://github.com/kagent-dev/kagent/pull/3519)), opt-in crash recovery on send ([#3399](https://github.com/kagent-dev/kagent/pull/3399)), session/push recovery telemetry ([#3593](https://github.com/kagent-dev/kagent/pull/3593)).
+- **MCP identity plumbing:** session ID header to MCP servers ([#3628](https://github.com/kagent-dev/kagent/pull/3628)), forward the caller credential on MCP/model calls ([#3018](https://github.com/kagent-dev/kagent/pull/3018)), caller context on every span ([#2575](https://github.com/kagent-dev/kagent/pull/2575)).
+- **Security-adjacent, open:** runtime cert trust for v0.10.x ([#3320](https://github.com/kagent-dev/kagent/pull/3320)), Python/native runtime trust ([#3321](https://github.com/kagent-dev/kagent/pull/3321)), extra egress CAs for the gateway upstream TLS ([substrate#101](https://github.com/kagent-dev/substrate/pull/101)).
+- **Substrate still tag-less past v1.0.1** (`release-1.0` carries [#167](https://github.com/kagent-dev/substrate/pull/167), no newer commits). Open: RustFS `rustfs.existingSecret` ([#169](https://github.com/kagent-dev/substrate/pull/169)), AKS profile ([#161](https://github.com/kagent-dev/substrate/pull/161)). Installer rule stands: keep the install `-c` config — `upgrade` without it applies bundled defaults silently.
+- **Demo features in flight:** kagent-tools skills + `k8s-agent` in the agent form ([#3554](https://github.com/kagent-dev/kagent/pull/3554)), xAI provider ([#3561](https://github.com/kagent-dev/kagent/pull/3561)), custom-`baseUrl` host leak ([#3537](https://github.com/kagent-dev/kagent/pull/3537)), runlab microVM PR lab ([#3637](https://github.com/kagent-dev/kagent/pull/3637)).
+- **Re-test on demo agents (PRs bumped today):** Ollama stream-after-stop ([#3373](https://github.com/kagent-dev/kagent/pull/3373)), langgraph list-block text ([#3365](https://github.com/kagent-dev/kagent/pull/3365)), Anthropic tool-call order ([#3301](https://github.com/kagent-dev/kagent/pull/3301)) / multi-turn role ([#3289](https://github.com/kagent-dev/kagent/pull/3289)).
+- Carried over: kagent 1.0.0 pins substrate **v1.0.0** — an "Agent Substrate 0.6" cluster is not what GA pairs with; expect alpha12 on kagent 1.0.x + substrate 1.0.1/1.0.2. And substrate `upgrade` still doesn't roll WorkerPool images.
