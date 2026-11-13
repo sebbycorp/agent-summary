@@ -59,7 +59,7 @@ The Outbreak Alerts feed contains **no alert about Fortinet products**. The thre
    - FG-IR-26-268 / FG-IR-26-267 concern the **bgpd / ospfd** routing daemons — restrict or remove untrusted iBGP neighbours and limit OSPF areas/interfaces; confirm no BGP/OSPF exposure to untrusted networks.
    - FG-IR-26-269 concerns the **sshd** daemon — keep SSH admin access locked to trusted management CIDRs / out-of-band access only.
 3. **FGFM hygiene** for the two "check advisory" rows: confirm the FGFM port is reachable only from authorised FortiManager(s), and if a FortiManager manages this device, verify it runs 7.4.12 or above (FG-IR-26-225) / 7.4.6 or above (FG-IR-26-275).
-4. FG-IR-295 needs no action on 7.4.11 (vendor marks FortiOS 7.4 "Not Applicable").
+4. FG-IR-26-195 needs no action on 7.4.11 (vendor marks FortiOS 7.4 "Not Applicable").
 5. Re-run this check after upgrading to confirm the three affected advisories no longer apply.
 
 ---
