@@ -1,12 +1,12 @@
-# agentgateway-updates - 2026-11-16
+# agentgateway-updates - 2026-11-17
 
-**A frozen weekend: zero merges, zero releases — `agentgateway` main is still at the 11-14 commit. But 4 new PRs opened Sun/Mon, headlined by a CRD/xDS API change (CEL `replace` for header transforms, #4421) and the Claude-Code-on-Bedrock beta-header fix (#4420). Still no 1.8 tag.**
+**The freeze broke: 11 PRs merged into `agentgateway` main on Sun 11-16 (malformed-Host 400, HBONE deadlock fixes, MCP multi-replica sessions, Vertex beta-header filter), and the PR-tracker docs backlog landed in `website` overnight (36 merges, incl. the 1.8 release notes). Still no 1.8 tag.**
 
-_Window: merged/pushed/updated `>=2026-11-15` (last report covered `>=2026-11-14`). All four repos have **no commits and no merges** in the window; activity is new/updated open PRs in `agentgateway` plus automated docs in `website`. `community`/`benchmarks` idle. [PRs updated in window][updated]._
+_Window: merged/pushed `>=2026-11-16` (last report covered `>=2026-11-15`). `benchmarks` and `community` idle._
 
 ## Releases
 
-**None in window.** Newest artifact is still the Oct 27 cut; no tags past `v1.7.0`. Everything merged since (LLM-IR, Bedrock fixes, webhook-guardrail writeback, catalog refreshes) is nightly / `:latest-dev` only.
+**None published in window.** Newest artifact is still the Oct 27 cut; nothing past `v1.7.0`, so everything below is nightly / `:latest-dev` only.
 
 | Repo | Latest stable | Latest pre-release |
 | --- | --- | --- |
@@ -16,66 +16,81 @@ _Window: merged/pushed/updated `>=2026-11-15` (last report covered `>=2026-11-14
 
 ## Highlights
 
-- **CRD/API change coming: CEL `replace` reaches Kubernetes** — [#4421][pr-4421] (dongjiang1989, 11-16). `replace` for header transforms existed since #2589 but only in **local file config** — the xDS proto and `AgentgatewayPolicy` CRD never carried it, so on K8s you cannot express a header allowlist. Adds `optional string replace = 6` to `TransformationPolicy.Transform` and `Replace *CELExpression` to the CRD `Transform` (same `isCEL` validation), regenerating deepcopy + Helm CRD YAMLs; fixes #4384 by raising the replace-failure log debug→warn, since a failed replace **fails open** and keeps the original headers. **Demo impact:** the K8s customer currently has to fall back to standalone config.
-- **Claude Code on Bedrock stops 400-ing on beta headers** — [#4420][pr-4420] (Quentin-M, 11-16). Claude Code sends `advanced-tool-use-2025-11-20`, which Bedrock has no name for and rejects; this rewrites it to Bedrock's equivalents (`tool-search-tool-2025-10-19` + `tool-examples-2025-10-29`), deduped against client-sent names, on Converse and native, and adds 8 accepted-but-missing betas (`compact-2026-09-04`, `computer-use-2024-10-22`, `inline-tools-2026-09-15`, two `thinking-*`, …), excluding `compact-2026-09-04` from Converse. Author probed every beta live on Opus 5.5 / Sonnet 5.5 / Haiku 4.5 / Fable 5.1–5.2: no 400s in Claude Code auto mode. Caveat: native requests still **skip** the allowlist unless `AGENTGATEWAY_BEDROCK_ANTHROPIC_BETA_HEADERS` is set.
-- **Retry in the simplified standalone LLM config** — [#4424][pr-4424] (dimetron, 11-16, fixes #4423). `llm.policies` accepted `timeout` but not `retry`, so standalone LLM routes could not retry provider 429s/5xx. Adds `retry` to `LocalLLMPolicy` through `split_policies` into `TrafficPolicy::Retry`; schema regenerated. Kills a quickstart footgun.
-- **Duplicate model names per router — still pending** — [#4419][pr-4419] (mangopep, 11-15, +2,800/−10, 11 files). Two same-named models on one listener coexist and either can answer; the fix keeps the winner (oldest, then namespace/name) and marks the loser `Accepted=False, Conflicted`, so a new model can't silently take over live traffic. **Blocked on review** since it opened — good canary/shadow caveat slide.
-- **1.8 notes keep assembling, no cut** — website [#1519][pr-1519] "Release notes from the PR tracker" (touched 11-15), plus four automated draft-docs PRs refreshed this morning: [1542][pr-1542] fast-mode pricing, [1543][pr-1543] helm histograms, [1544][pr-1544] guardrail writeback, [1545][pr-1545] UI LLM settings.
-- **The LiteLLM importer stalled** — [4413][pr-4413] · [4414][pr-4414] · [4415][pr-4415] unchanged since 11-14 19:50 UTC, as are [4416][pr-4416] and [4417][pr-4417]. Yesterday's "migration lands any minute" call needs patience.
-- **No security fixes or CVEs** merged or updated in the window.
+- **Malformed `Host` gets a `400`, not a route miss** — [agw#4439][pr-4439] (howardjohn, 11-16, fixes #4361). Rejected client-side before routing; same family as the duplicate-Host fix in the 1.8 notes. Pair with path normalization in the security slide.
+- **MCP streams work behind N replicas** — [#4437][pr-4437] (howardjohn, 11-16, fixes #4428). `GET /mcp` checked only the local session map, so a `GET` landing on a replica that never handled `initialize` returned **404**; now uses `get_or_resume_session` like POST/DELETE. This was the "works on my laptop, breaks on Kind" MCP demo failure.
+- **HBONE deadlock fixes ported from ztunnel** — [#4436][pr-4436] (howardjohn, 11-16, cherry-picks ztunnel `043ea989`). With the h2 waiter/deadlock entries in the 1.8 notes, HBONE + h2 stability is the theme of this batch.
+- **Vertex stops 400-ing on unknown `anthropic-beta` values** — [#4416][pr-4416] (jamesilse, 11-16, fixes #4396). Unsupported values filtered; `AGENTGATEWAY_VERTEX_ANTHROPIC_BETA_HEADERS` overrides the allowlist. The Bedrock twin [#4420][pr-4420] is still open.
+- **Anthropic wire conformance on Bedrock** — [#4432][pr-4432] (ividalATSnyk, 11-16). Emits both Anthropic cache-duration counters when Bedrock supplies cache-creation details (missing duration defaults to 0), and adds the **required `error` discriminator** in translated Anthropic error envelopes — strict Anthropic SDKs reject the envelope without it.
+- **`retry` in the simplified standalone LLM config** — [#4424][pr-4424] (dimetron, 11-16, fixes #4423). `llm.policies` took `timeout` but not `retry`; `retry: {attempts, codes, backoff}` now flows via `split_policies` into `TrafficPolicy::Retry`; schema regenerated. Kills a quickstart footgun.
+- **Model catalog refreshed, `flex` tier everywhere** — [#4418][pr-4418] (bot, 11-16). Adds `serviceTier: flex` to gpt-5.4/5.5/5.6-\*/6\*/6.1\* plus new models (`gemini-4-hydrogen`, `Kimi K3.1 Pro`, `Inkling 2 Small`), drops Azure/OpenAI `gpt-image-2*`, cuts Gemini image output rates ~10x. Cost/budget demo numbers change.
+- **OIDC bearer scope documented** — [#4357][pr-4357] (ymesika, 11-16). `sessionOrBearer` accepts **any** issuer-signed JWT carrying the client in `aud`; restrict with authorization rules.
+- **1.8 release notes finally exist** — website [#1519][pr-1519] merged 11-17 01:48 with ~20 auto-drafted doc PRs (path normalization, `ui.basePath`, `config.dns.maxTtl`, nested virtual models, `AGW_ENABLE_AGENTGATEWAY_MODELS` removal, OTLP log body/timestamp).
+- **No CVEs** in window; 4439/4431/4369/4394 are the security-adjacent items.
 
 ## Merged PRs by repo
 
-**None in window.** `org:agentgateway is:pr is:merged merged:>=2026-11-15` → 0 results; agentgateway main HEAD still [`18f8370`][c-ag] (11-14 00:08), website main HEAD still [`33cf4cd`][c-ws] (11-13 22:08). New PRs opened in the window instead:
+`org:agentgateway is:pr is:merged merged:>=2026-11-16` → **47** (11 `agentgateway`, 36 `website`).
 
-| Repo | PR | Title | Author | Opened |
+| Repo | PR | Title | Author | Merged |
 | --- | --- | --- | --- | --- |
-| agentgateway | [#4421][pr-4421] | feat(transformation): expose CEL replace mode in xDS proto and AgentgatewayPolicy CRD | dongjiang1989 | 11-16 |
-| agentgateway | [#4420][pr-4420] | bedrock: map advanced-tool-use and refresh the Anthropic beta allowlist | Quentin-M | 11-16 |
-| agentgateway | [#4424][pr-4424] | feat(llm): support retry in standalone llm.policies | dimetron | 11-16 |
-| agentgateway | [#4419][pr-4419] | fix(controller): reject duplicate exact model names per router | mangopep | 11-15 |
-| website | [#1547][pr-1547] | [Automated] Refresh product-UI screenshots | github-actions[bot] | 11-16 |
-| website | [1542][pr-1542] · [1543][pr-1543] · [1544][pr-1544] · [1545][pr-1545] | [Automated] Draft docs (fast-mode pricing, helm histograms, guardrail writeback, UI LLM settings) | github-actions[bot] | 11-15 |
+| agentgateway | [4439][pr-4439] | fix: return 400 for malformed Host headers | howardjohn | 11-16 |
+| agentgateway | [4437][pr-4437] | mcp: resume sessions on GET (any replica serves stream) | howardjohn | 11-16 |
+| agentgateway | [4436][pr-4436] | hbone: port deadlock fixes over | howardjohn | 11-16 |
+| agentgateway | [4432][pr-4432] | fix: preserve Anthropic response conformance on Bedrock | ividalATSnyk | 11-16 |
+| agentgateway | [4424][pr-4424] | feat(llm): support retry in standalone llm.policies | dimetron | 11-16 |
+| agentgateway | [4418][pr-4418] | Update model catalog | github-actions[bot] | 11-16 |
+| agentgateway | [4416][pr-4416] | fix(llm): filter unsupported anthropic-beta on Vertex | jamesilse | 11-16 |
+| agentgateway | [4357][pr-4357] | oidc: clarify bearer tokens sessionOrBearer accepts | ymesika | 11-16 |
+| agentgateway | [4444][pr-4444] | document request log api and budget status types | jenshu | 11-16 |
+| website | [1519][pr-1519] | Release notes from the PR tracker (the 1.8 notes) | github-actions[bot] | 11-17 |
+| website | [1551][pr-1551] | misc doc fixes: MCP tasks, normalization, connection limits | artberger | 11-17 |
+| website | [1550][pr-1550] | docs: private multi-LLM routing on GKE blog post | danehans | 11-16 |
+| website | [1549][pr-1549] | docs: pin GKE guide to Cluster Toolkit v1.109.0 | danehans | 11-16 |
+| website | [1399][pr-1399] | docs: shared provider TLS defaults | pqminh27 | 11-17 |
+
++22 more (incl. [4340][pr-4340] ui multiselect, [4440][pr-4440] ci, [1553][pr-1553] reference docs, and ~19 `[Automated] Draft docs` regens): [all 47 merged][merged].
 
 ## Watch list
 
 | Repo | PR | Why |
 | --- | --- | --- |
-| agentgateway | [#4421][pr-4421] · [#4419][pr-4419] | **xDS proto + CRD / status changes**: `replace` on header transforms (regenerate CRDs, then test a header allowlist on omni-viper); duplicate model names → `Accepted=False/Conflicted`. Both blocked |
-| agentgateway | [#4420][pr-4420] · [#4424][pr-4424] | Bedrock beta allowlist (native-mode default undecided); `llm.policies.retry` + regenerated schema |
-| agentgateway | [4413][pr-4413] · [4414][pr-4414] · [4415][pr-4415] · [4416][pr-4416] · [4417][pr-4417] | LiteLLM importer expansion (keys, budgets, MCP, guardrails, timeouts); Vertex `anthropic-beta` filter + env override; Devin Desktop ACP recipe (replaces the broken Windsurf proxy one) — all frozen since 11-14 |
-| agentgateway | [4392][pr-4392] · [4330][pr-4330] · [4184][pr-4184] | Updated in window: `bedrockRuntimeApi: native\|converse` per provider (Codex losing `custom` tools, **no xDS field yet**); disabled-thinking on always-on Bedrock Claude; mid-conversation system messages |
-| website | [1519][pr-1519] · [1526][pr-1526] · [1527][pr-1527] · [4418][pr-4418] | The 1.8 release-notes PR, reference-doc regens and the model-catalog refresh — watch these for the cut |
-| website | [1478][pr-1478] · [1523][pr-1523] | Elastic observability guides; OSS assistant skills — day-2 demo material |
+| agentgateway | [4430][pr-4430] | **(breaking)** default `agentgateway.user` = `jwt.email` → `jwt.sub` → API-key metadata, dropping `apiKey.name`: splits request-log history per person, changes UI API-key ownership. Pin `standardAttributes.user` for old behaviour. Blocked |
+| agentgateway | [4431][pr-4431] | Security hardening: deny/allowlist files referenced from config (`/dev/…` risk). Blocked |
+| agentgateway | [4421][pr-4421] · [4420][pr-4420] | Yesterday's CRD/API items still open: CEL `replace` on header transforms in xDS + `AgentgatewayPolicy`; Bedrock `advanced-tool-use` beta mapping |
+| agentgateway | [4387][pr-4387] · [4369][pr-4369] · [4394][pr-4394] | **CRD shape change**: prompt-guard policies move to top level; `privateKeyJwt` assertion capped at 300s; isolate remote JWKS fetch failures |
+| agentgateway | [4447][pr-4447] · [4402][pr-4402] · [4413][pr-4413] · [4419][pr-4419] | Drop catalog tiers with an unrecognized `serviceTier`; Gemini Decisions API routing; rest of the LiteLLM importer series + duplicate-model guard (**no window activity**) |
 
-Nothing to re-test on omni-viper today (no merged behaviour change). Best `:latest-dev` spins while waiting on 1.8: **header-transform `replace` on K8s** (4421, post-merge with new CRDs), **Claude Code → Bedrock beta headers** (4420), **standalone `llm.policies.retry`** (4424).
+Re-test on omni-viper with `:latest-dev`: MCP `GET /mcp` over 3 replicas (4437), malformed Host → 400 (4439), Vertex beta filter + env override (4416), Bedrock cache counters + `error` discriminator (4432), standalone `llm.policies.retry` (4424).
 
-[updated]: https://github.com/pulls?q=is%3Apr+org%3Aagentgateway+updated%3A%3E%3D2026-11-15
+[merged]: https://github.com/pulls?q=is%3Apr+org%3Aagentgateway+is%3Amerged+merged%3A%3E%3D2026-11-16
 [ag-170]: https://github.com/agentgateway/agentgateway/releases/tag/v1.7.0
 [ag-170rc1]: https://github.com/agentgateway/agentgateway/releases/tag/v1.7.0-rc.1
 [ws-170]: https://github.com/agentgateway/website/releases/tag/v1.7.0
-[c-ag]: https://github.com/agentgateway/agentgateway/commit/18f83707118b3e2df500cc63299486958a0e86f5
-[c-ws]: https://github.com/agentgateway/website/commit/33cf4cdf4b4c1d02119b7cef788fcf2eca953ac9
+[pr-4439]: https://github.com/agentgateway/agentgateway/pull/4439
+[pr-4437]: https://github.com/agentgateway/agentgateway/pull/4437
+[pr-4436]: https://github.com/agentgateway/agentgateway/pull/4436
+[pr-4432]: https://github.com/agentgateway/agentgateway/pull/4432
+[pr-4424]: https://github.com/agentgateway/agentgateway/pull/4424
+[pr-4418]: https://github.com/agentgateway/agentgateway/pull/4418
+[pr-4416]: https://github.com/agentgateway/agentgateway/pull/4416
+[pr-4357]: https://github.com/agentgateway/agentgateway/pull/4357
+[pr-4340]: https://github.com/agentgateway/agentgateway/pull/4340
+[pr-4444]: https://github.com/agentgateway/agentgateway/pull/4444
+[pr-4440]: https://github.com/agentgateway/agentgateway/pull/4440
+[pr-4430]: https://github.com/agentgateway/agentgateway/pull/4430
+[pr-4431]: https://github.com/agentgateway/agentgateway/pull/4431
 [pr-4421]: https://github.com/agentgateway/agentgateway/pull/4421
 [pr-4420]: https://github.com/agentgateway/agentgateway/pull/4420
-[pr-4424]: https://github.com/agentgateway/agentgateway/pull/4424
-[pr-4419]: https://github.com/agentgateway/agentgateway/pull/4419
-[pr-4418]: https://github.com/agentgateway/agentgateway/pull/4418
-[pr-4417]: https://github.com/agentgateway/agentgateway/pull/4417
-[pr-4416]: https://github.com/agentgateway/agentgateway/pull/4416
-[pr-4415]: https://github.com/agentgateway/agentgateway/pull/4415
-[pr-4414]: https://github.com/agentgateway/agentgateway/pull/4414
+[pr-4447]: https://github.com/agentgateway/agentgateway/pull/4447
+[pr-4402]: https://github.com/agentgateway/agentgateway/pull/4402
+[pr-4369]: https://github.com/agentgateway/agentgateway/pull/4369
+[pr-4394]: https://github.com/agentgateway/agentgateway/pull/4394
+[pr-4387]: https://github.com/agentgateway/agentgateway/pull/4387
 [pr-4413]: https://github.com/agentgateway/agentgateway/pull/4413
-[pr-4392]: https://github.com/agentgateway/agentgateway/pull/4392
-[pr-4330]: https://github.com/agentgateway/agentgateway/pull/4330
-[pr-4184]: https://github.com/agentgateway/agentgateway/pull/4184
-[pr-1547]: https://github.com/agentgateway/website/pull/1547
-[pr-1545]: https://github.com/agentgateway/website/pull/1545
-[pr-1544]: https://github.com/agentgateway/website/pull/1544
-[pr-1543]: https://github.com/agentgateway/website/pull/1543
-[pr-1542]: https://github.com/agentgateway/website/pull/1542
-[pr-1527]: https://github.com/agentgateway/website/pull/1527
-[pr-1526]: https://github.com/agentgateway/website/pull/1526
-[pr-1523]: https://github.com/agentgateway/website/pull/1523
+[pr-4419]: https://github.com/agentgateway/agentgateway/pull/4419
 [pr-1519]: https://github.com/agentgateway/website/pull/1519
-[pr-1478]: https://github.com/agentgateway/website/pull/1478
+[pr-1551]: https://github.com/agentgateway/website/pull/1551
+[pr-1550]: https://github.com/agentgateway/website/pull/1550
+[pr-1549]: https://github.com/agentgateway/website/pull/1549
+[pr-1399]: https://github.com/agentgateway/website/pull/1399
+[pr-1553]: https://github.com/agentgateway/website/pull/1553
