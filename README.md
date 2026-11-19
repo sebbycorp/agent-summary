@@ -6,28 +6,33 @@ morning by the `agent-summary-digest` agent.
 
 ## Today's highlights - 2026-11-19
 
-**Bottom line:** 6 of 7 scheduled reports arrived and 2 need action — top item is Argo CD `v3.5.3` on omni-viper (CVE-2026-77459, CVSS 10.0, fixed in v3.5.4), with FortiOS 7.4.11 close behind.
+**Bottom line:** 6 of 7 reports arrived, 3 need action - top item is Argo CD `v3.5.3` on `omni-viper`, hit by CVE-2026-77459 (10.0) and CVE-2026-55797 (9.9), fix in `3.5.4`.
 
 ### Action needed
-- **k8s-cve** - Argo CD `v3.5.3` is vulnerable to **CVE-2026-77459** (CVSS 10.0, AppProject hook bypass) and **CVE-2026-55797** (CVSS 9.9, repo-server command injection); fix is **v3.5.4**. Also unpatched on omni-viper: flannel `v0.27.2` (CVE-2026-32241 cross-node RCE, fix 0.28.2), local-path-provisioner `v0.0.31` (CVE-2025-62878, 9.9), CoreDNS `v1.12.3` (12 CVEs, fix 1.14.7), containerd `2.2.7` (3 CVEs) — a Talos `v1.13.10 → 1.14.x` upgrade covers flannel + containerd. [Details](reports/k8s-cve/latest.md)
-- **fortiguard-cve** - Four 2026-11-10 PSIRT advisories list FortiOS 7.4.11 as affected — FG-IR-26-268 / CVE-2026-126254 (9.6, bgpd), FG-IR-26-267 / CVE-2026-126253 (9.3, ospfd), FG-IR-26-273 / CVE-2026-126259 (9.0, HA), FG-IR-26-269 / CVE-2026-126255 (7.4, sshd). Upgrade fw-maniak-hq (FortiGate 80F) **v7.4.11 → 7.4.13**. [Details](reports/fortiguard-cve/latest.md)
+
+- **k8s-cve** - Argo CD `v3.5.3`: **CVE-2026-77459** (10.0, AppProject restrictions bypassed by PreDelete/PostDelete hooks) + **CVE-2026-55797** (9.9, repo-server command injection via a crafted SSH repo SOCKS5 URL) - bump to **3.5.4**. [Details](reports/k8s-cve/latest.md)
+- **k8s-cve** - unpatched too: flannel `v0.27.2` CVE-2026-32241 (cross-node RCE, 0.28.2), local-path-provisioner `v0.0.31` (>= v0.0.36), CoreDNS `v1.12.3` (12 CVEs, >= v1.14.7), containerd `2.2.7`; Talos 1.14.x covers these + the `kube-proxy:v1.34.11` skew. [Details](reports/k8s-cve/latest.md)
+- **fortiguard-cve** - 4 advisories of 2026-11-10 hit FortiOS 7.4.11, 3 CRITICAL: CVE-2026-126254 (9.6 bgp), CVE-2026-126253 (9.3 ospf), CVE-2026-126259 (9.0 HA), CVE-2026-126255 (7.4 sshd) - **upgrade fw-maniak-hq to 7.4.13**. [Details](reports/fortiguard-cve/latest.md)
+- **kagent-updates** - nginx HTTP/2 fix [#3730](https://github.com/kagent-dev/kagent/pull/3730) (1.31.8 -> 1.31.9, CVE-2026-123633 / CVE-2026-123007) is `main`-only, backport [#3732](https://github.com/kagent-dev/kagent/pull/3732) blocked - **alpha12 has nginx 1.31.8**; rebuild the UI image or keep HTTP/2 off. [Details](reports/kagent-updates/latest.md)
 
 ### Worth knowing
-- **kagent-updates** - No releases for a 7th day; the nginx HTTP/2 RCE fix [#3730](https://github.com/kagent-dev/kagent/pull/3730) (UI base 1.31.8→1.31.9, CVE-2026-123633 / CVE-2026-123007) is only on `main` — backport [#3732](https://github.com/kagent-dev/kagent/pull/3732) is blocked, so Enterprise alpha12 lacks it; stock installs are safe (HTTP/2 off by default). [Details](reports/kagent-updates/latest.md)
-- **kagent-updates** - Breaking-ish for Python BYO on Substrate: [#3729](https://github.com/kagent-dev/kagent/pull/3729) moves the entry point to `app.build().run()`; Substrate IPv6 is a new 6-PR workstream, all unmerged. [Details](reports/kagent-updates/latest.md)
-- **agentgateway-updates** - No 1.8 tag yet (newest is the Oct 27 v1.7.0 cut) despite 17 merges in 36h: prompt-guard `policies` moved to top level (#4387) — CRD shape change in `main`, update nested-policy demo YAML; catalog moved to models.dev v2 pricing, so quoted rates shift. [Details](reports/agentgateway-updates/latest.md)
-- **agentdesktop-updates** - Unreleased `main` broke enrollment: `BeginEnrollment`/`CompleteEnrollment` → `GetLoginConfiguration` + `EnrollDevice` (#236) — controller and agents must upgrade together, no fallback. Open #240 moves JWKS to a `gatewayListener` (`127.0.0.1:8444`) — repoint gateway JWKS URLs first. [Details](reports/agentdesktop-updates/latest.md)
-- **fortigate-health** - Healthy (CPU 0%, memory 38% at 09:00), but disk is unverifiable here (`log_disk_status: not_available`) and logging is FortiCloud-only. [Details](reports/fortigate-health/latest.md)
+
+- **agentgateway-updates** - prompt-guard policies moved top-level ([#4387](https://github.com/agentgateway/agentgateway/pull/4387)), nested fields only deprecated - fix demo YAML that nests them; open **breaking** [#4430](https://github.com/agentgateway/agentgateway/pull/4430) changes default `agentgateway.user` (pin `standardAttributes.user`). [Details](reports/agentgateway-updates/latest.md)
+- **agentgateway-updates** - catalog from models.dev v2 ([#4457](https://github.com/agentgateway/agentgateway/pull/4457)) so quoted rates shift; UI is antd ([#4409](https://github.com/agentgateway/agentgateway/pull/4409)), deck shots stale; no CVEs; no 1.8 tag. [Details](reports/agentgateway-updates/latest.md)
+- **agentdesktop-updates** - no release; enrollment redone ([#236](https://github.com/agentdesktop-dev/agentdesktop/pull/236)) as `GetLoginConfiguration` + `EnrollDevice` - **controller and agents must upgrade together**; open breaking [#240](https://github.com/agentdesktop-dev/agentdesktop/pull/240) moves JWKS to a `gatewayListener`. [Details](reports/agentdesktop-updates/latest.md)
+- **kagent-updates** - no releases (7th day); Python BYO entry becomes `app.build().run()` ([#3729](https://github.com/kagent-dev/kagent/pull/3729)); blog post shipped ([website #722](https://github.com/kagent-dev/website/pull/722)). [Details](reports/kagent-updates/latest.md)
+- **fortigate-health** - HEALTHY (CPU 0%, mem 38%); disk unmeasured, FortiCloud the only log flow. [Details](reports/fortigate-health/latest.md)
 
 ### Report status
+
 | Report | Status | Verdict | Today | History |
 | --- | --- | --- | --- | --- |
-| [k8s-cve](reports/k8s-cve/latest.md) | ACTION | ACTION NEEDED — Argo CD v3.5.3 CVSS 10.0/9.9 (fix 3.5.4), plus flannel, containerd, local-path-provisioner, CoreDNS | [2026-11-19](reports/k8s-cve/2026/2026-11-19.md) | [all](reports/k8s-cve/) |
-| [fortiguard-cve](reports/fortiguard-cve/latest.md) | ACTION | Four FortiOS PSIRT advisories (three CRITICAL) affect 7.4.11; upgrade fw-maniak-hq to 7.4.13 | [2026-11-19](reports/fortiguard-cve/2026/2026-11-19.md) | [all](reports/fortiguard-cve/) |
-| [kagent-updates](reports/kagent-updates/latest.md) | WATCH | No releases (7th day); nginx HTTP/2 fix on main, backport #3732 to release/v1.0.x still open | [2026-11-19](reports/kagent-updates/2026/2026-11-19.md) | [all](reports/kagent-updates/) |
-| [agentgateway-updates](reports/agentgateway-updates/latest.md) | WATCH | No 1.8 tag; prompt-guard CRD reshuffle #4387 merged, models.dev v2 pricing catalog, 17 merges in 36h | [2026-11-19](reports/agentgateway-updates/2026/2026-11-19.md) | [all](reports/agentgateway-updates/) |
-| [agentdesktop-updates](reports/agentdesktop-updates/latest.md) | WATCH | No release (v0.6.0); enrollment RPC rewrite #236 breaking and unreleased, fleet gRPC limits, OpenCode 2 auth fix | [2026-11-19](reports/agentdesktop-updates/2026/2026-11-19.md) | [all](reports/agentdesktop-updates/) |
-| [fortigate-health](reports/fortigate-health/latest.md) | OK | HEALTHY — no resource counter above 80%; every reported metric sits below 50% | [2026-11-19](reports/fortigate-health/2026/2026-11-19.md) | [all](reports/fortigate-health/) |
+| [k8s-cve](reports/k8s-cve/latest.md) | ACTION | Argo CD v3.5.3 CVSS 10.0/9.9 (fix 3.5.4); flannel, local-path-provisioner, containerd, CoreDNS unpatched | [2026-11-19](reports/k8s-cve/2026/2026-11-19.md) | [all](reports/k8s-cve/) |
+| [fortiguard-cve](reports/fortiguard-cve/latest.md) | ACTION | 3 CRITICAL FortiOS PSIRT advisories affect 7.4.11, fixed in 7.4.13 | [2026-11-19](reports/fortiguard-cve/2026/2026-11-19.md) | [all](reports/fortiguard-cve/) |
+| [kagent-updates](reports/kagent-updates/latest.md) | ACTION | nginx HTTP/2 RCE fix on main only; alpha12 backport blocked | [2026-11-19](reports/kagent-updates/2026/2026-11-19.md) | [all](reports/kagent-updates/) |
+| [agentgateway-updates](reports/agentgateway-updates/latest.md) | WATCH | Prompt-guard CRD, models.dev v2 pricing, antd UI | [2026-11-19](reports/agentgateway-updates/2026/2026-11-19.md) | [all](reports/agentgateway-updates/) |
+| [agentdesktop-updates](reports/agentdesktop-updates/latest.md) | WATCH | No release; enrollment RPC rewritten | [2026-11-19](reports/agentdesktop-updates/2026/2026-11-19.md) | [all](reports/agentdesktop-updates/) |
+| [fortigate-health](reports/fortigate-health/latest.md) | OK | HEALTHY; disk not reported | [2026-11-19](reports/fortigate-health/2026/2026-11-19.md) | [all](reports/fortigate-health/) |
 | redteam-posture | MISSING | - | - | - |
 
 Audit: [reports/_status/latest.md](reports/_status/latest.md) - Past digests: [reports/_digest/](reports/_digest/)
