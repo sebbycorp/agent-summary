@@ -1,59 +1,59 @@
-# agentdesktop-updates - 2026-11-19
+# agentdesktop-updates - 2026-11-20
 
-No new release (latest still v0.6.0); enrollment moved after user login (**breaking RPC change**), fleet gRPC API got hard limits, OpenCode 2 gateway auth fixed; 11 PRs merged in `agentdesktop`, none in `website`.
+The gateway-JWKS split (**PR #240, breaking**) and supply-chain hardening (#256) landed on `main` — no release yet, latest is still v0.6.0; 8 PRs merged in `agentdesktop`, none in `website`.
 
-Window: 2026-11-12 → 2026-11-19 (no prior report; last 7 days used).
+Window: 2026-11-19 → 2026-11-20 (from `latest.md`).
 
 ## Releases
 
-**None in window.** No tags or releases published in `agentdesktop-dev/agentdesktop` or `.../website` since 2026-11-12.
-
-Current release state (for context):
+**None in window.** No new tags or releases in `agentdesktop-dev/agentdesktop` or `.../website`.
 
 | Repo | Latest stable | Latest pre-release | Published | Link |
 |---|---|---|---|---|
 | agentdesktop | v0.6.0 | none | 2026-11-06 | [v0.6.0](https://github.com/agentdesktop-dev/agentdesktop/releases/tag/v0.6.0) |
 | website | n/a | n/a | – | – |
 
-**v0.6.0 artifacts:** `ghcr.io/agentdesktop-dev/agentdesktop-controller:v0.6.0`, Helm `oci://ghcr.io/agentdesktop-dev/charts/agentdesktop-controller:0.6.0`, signed MSI / notarized PKG, static musl headless Linux binaries.
+Everything below is `main`-only and unreleased — v0.6.0 agents/controllers do not carry it.
 
 ## Highlights
 
-- **Breaking: enrollment protocol rewritten** ([#236](https://github.com/agentdesktop-dev/agentdesktop/pull/236), merged 11-18). `BeginEnrollment`/`CompleteEnrollment` are replaced by new RPCs `GetLoginConfiguration` + `EnrollDevice`. **Controller and agents must be upgraded together — there is no fallback.** Demo impact: an old agent against a new controller will not enroll.
-- Enrollment is now **nonce-bound to the device key**: the browser sign-in's nonce must be the SHA-256 of the CSR public key, so tokens from a refresh grant or a sign-in for another key cannot enroll a device. Also drops the 1,024 pending-enrollment cap and in-memory state → **controller replicas no longer need sticky routing**. New DB migration `0005_enrollment_receipts`.
-- **New: fleet gRPC API rate/connection limits** ([#237](https://github.com/agentdesktop-dev/agentdesktop/pull/237), merged 11-17). Per-address + total connection caps, HTTP/2 stream caps, message-size caps, enrollment rate limits, per-device Connect budgets. New `fleetLimits` section in `controller.yaml` + Helm values. Ops gotcha: the 50,000-connection default needs `LimitNOFILE` raised under bare systemd/launchd.
-- **agentgateway integration: OpenCode 2 now authenticates** ([#229](https://github.com/agentdesktop-dev/agentdesktop/pull/229), merged 11-12). OpenCode 2 silently dropped the V1 credential plugin, so requests hit the gateway with no Agentdesktop JWT → **403**. The agent now writes a V2 plugin (directory + default export, header set in `http.request`) alongside the V1 one. Test this on omni-viper with OpenCode 2.2.x. Known gap: Windows default paths resolve to `C:\etc\opencode` instead of `%ProgramData%\opencode`.
-- **agentgateway reliability: no more forced re-enrollment on token expiry** ([#241](https://github.com/agentdesktop-dev/agentdesktop/pull/241), merged 11-12). A rejected `Unauthenticated` stream response used to wipe the saved device identity and force interactive sign-in; the daemon now refreshes the token and reconnects first. Fixes sleep/wake-style flakiness in gateway demos.
-- **agentgateway security: separate JWKS listener (open PR, breaking)** ([#240](https://github.com/agentdesktop-dev/agentdesktop/pull/240)). Management + fleet listeners currently serve `/.well-known/jwks.json`, exposing the inventory-capable admin surface to gateways. New dedicated `gatewayListener` (default `127.0.0.1:8444`) and the fleet listener **drops HTTP/1**. Upgrade prerequisite: repoint every gateway's JWKS URL first.
-- macOS enrollment no longer opens a stray Safari window from the root LaunchDaemon ([#231](https://github.com/agentdesktop-dev/agentdesktop/pull/231)); the URL is still published on `/v1/enrollment`.
-- New tool on the way: **Muse Code** discovery + managed gateway config ([#257](https://github.com/agentdesktop-dev/agentdesktop/pull/257), open) — extends the Copilot CLI / Claude Code / Pi / OpenCode roster.
-- Supply-chain hardening in flight ([#256](https://github.com/agentdesktop-dev/agentdesktop/pull/256), open): action/image pins, `cargo-deny`, NetworkPolicy.
-- Dependency moves ([#265](https://github.com/agentdesktop-dev/agentdesktop/pull/265)): `jsonwebtoken` 11.1.0 → **12.0.0** (rejects unknown critical extensions, fixes `sub`/`iss`/`aud` type confusion, breaking empty-HMAC-key handling), `prost` 0.14.6, `rand` 0.10.4 — smoke-test JWT paths.
+- **Breaking (agentgateway): the JWKS moved to its own listener** ([#240](https://github.com/agentdesktop-dev/agentdesktop/pull/240), merged 11-19, [commit](https://github.com/agentdesktop-dev/agentdesktop/commit/52c0b191da03aa7bbb61a5218f3589c915242b89)). Only the new `gatewayListener` (default `127.0.0.1:8444`, `tls`, started when `gatewayJwt` is set) serves `/.well-known/jwks.json`; the management and **fleet** listeners no longer do, and the fleet listener **refuses HTTP/1**. **Upgrade order: repoint every agentgateway's JWKS URL first** (Helm: the `<release>-gateway` Service) or Copilot CLI / Claude Code / Pi / OpenCode credentials get rejected.
+  - Config renames, old keys now **rejected**: `fleetListen` → `fleetListener.listen`, `adminListen` → `adminListener.listen`. Helm handles it; an `existingConfigSecret` must be edited by hand.
+  - New connection limits on the management listener (previously unlimited) and gateway listener: `maxConnections` / `connectionsPerAddress` (admin 256/256, gateway 1024/64). Docs recommend `gatewayListener.tls: true` — whoever can alter the keys a gateway fetches can forge credentials.
+  - Gateways that export usage still need the fleet port. Controller settings page does not show the gateway listener yet.
+- **Breaking-adjacent (YAML): `serde_yaml` replaced by `serde-saphyr`** ([#256](https://github.com/agentdesktop-dev/agentdesktop/pull/256), merged 11-19, [commit](https://github.com/agentdesktop-dev/agentdesktop/commit/b7e4859ed7dac256fba2d55715cfa9d3ee632359)). Duplicate keys are now an error, `.inf`/`.nan` rejected, `<<` merge keys honoured, `yes`/`no`/`on`/`off` stay strings. Validate your `controller.yaml` / daemon configs before a demo upgrade.
+  - Same PR: `cargo-deny` + `deny.toml` + `make deny` CI job (pinned `cargo-deny 0.20.2`), all GitHub Actions re-pinned to SHAs, **all Dockerfile base images pinned by digest** (incl. the previously floating Chainguard `:latest`), and an **optional Helm `NetworkPolicy`** (`networkPolicy.enabled`, default false; fleet port open by default, admin port namespace-scoped). Not yet tested on a real cluster — good omni-viper candidate.
+  - Ignored advisories to be aware of: RUSTSEC-2026-0459 (bundled SQLite CVE, blocked on `sqlx`/`libsqlite3-sys`) plus unmaintained `proc-macro-error`, `zvariant`/`zbus_names` (Linux keyring), `astral-tokio-tar`.
+- **Supply chain: `humantime` dropped for `jiff`** ([#277](https://github.com/agentdesktop-dev/agentdesktop/pull/277), merged 11-19, [commit](https://github.com/agentdesktop-dev/agentdesktop/commit/ddef30744936120f096ec13bea3422784297c371)) — RUSTSEC-2026-0542 marked it unmaintained, which was failing the new `deny` job. User-visible: durations ≥1 day now print as hours (`720h`, not `30days`) in `client config` and the desktop daemon info panel; `1month`/`1year` are rejected.
+- **JWT stack moved to `jsonwebtoken` 12.0.0** ([#265](https://github.com/agentdesktop-dev/agentdesktop/pull/265), merged 11-19) — rejects unknown critical extensions, fixes `sub`/`iss`/`aud` type confusion, breaking empty-HMAC-key handling. Smoke-test agent→controller and gateway auth after upgrading from `main`.
+- **UI test/CI fix that was masking breakage** ([#266](https://github.com/agentdesktop-dev/agentdesktop/pull/266)) — duplicate React copies made 89/92 controller storybook tests fail on a cold cache; CI only passed warm.
+- Still open and relevant: operator-signed-token enrollment ([#267](https://github.com/agentdesktop-dev/agentdesktop/pull/267)) — note a token-enrolled device gets `FAILED_PRECONDITION` on `GetLlmGatewayCredential` ("sign in to use the LLM gateway"), so zero-touch devices can't drive gateway demos until `AttachUser` lands; Muse Code support ([#257](https://github.com/agentdesktop-dev/agentdesktop/pull/257)).
 
 ## Merged PRs by repo
 
 | Repo | PR | Title | Author | Merged |
 |---|---|---|---|---|
-| agentdesktop | [#236](https://github.com/agentdesktop-dev/agentdesktop/pull/236) | move enrollment after user login - so no need for pending enrollment | yuval-k | 2026-11-18 |
-| agentdesktop | [#237](https://github.com/agentdesktop-dev/agentdesktop/pull/237) | fix(controller): add limits to the fleet gRPC API | ilackarms | 2026-11-17 |
-| agentdesktop | [#229](https://github.com/agentdesktop-dev/agentdesktop/pull/229) | feat(opencode): write an OpenCode 2 credential plugin next to the V1 one | palexus | 2026-11-12 |
-| agentdesktop | [#241](https://github.com/agentdesktop-dev/agentdesktop/pull/241) | Refresh rejected controller credentials before reenrollment | rhummelmose | 2026-11-12 |
-| agentdesktop | [#231](https://github.com/agentdesktop-dev/agentdesktop/pull/231) | fix(enrollment): do not open a browser from a system-mode daemon | ibalat | 2026-11-12 |
-| agentdesktop | [#254](https://github.com/agentdesktop-dev/agentdesktop/pull/254) | fix(agent): pass open_browser in the auth recovery test fixture | ilackarms | 2026-11-13 |
-| agentdesktop | [#266](https://github.com/agentdesktop-dev/agentdesktop/pull/266) | fix(ui): align shared UI peer versions with the apps | yuval-k | 2026-11-19 |
-| agentdesktop | [#265](https://github.com/agentdesktop-dev/agentdesktop/pull/265) | build(deps): bump the rust group with 5 updates | dependabot[bot] | 2026-11-19 |
-| agentdesktop | [#264](https://github.com/agentdesktop-dev/agentdesktop/pull/264) | build(deps): bump the ui group in /frontend with 9 updates | dependabot[bot] | 2026-11-18 |
-| agentdesktop | [#263](https://github.com/agentdesktop-dev/agentdesktop/pull/263) | build(deps): bump taiki-e/install-action 2.90.3 → 2.90.5 | dependabot[bot] | 2026-11-18 |
-| agentdesktop | [#262](https://github.com/agentdesktop-dev/agentdesktop/pull/262) | build(deps): bump library/node 26.13.0 → 26.13.1-bookworm | dependabot[bot] | 2026-11-18 |
+| agentdesktop | [#240](https://github.com/agentdesktop-dev/agentdesktop/pull/240) | feat(controller)!: listener-scoped config, gateway JWKS on its own listener | yuval-k | 2026-11-19 |
+| agentdesktop | [#256](https://github.com/agentdesktop-dev/agentdesktop/pull/256) | build: supply-chain hardening (pins, cargo-deny, NetworkPolicy, serde-saphyr) | yuval-k | 2026-11-19 |
+| agentdesktop | [#277](https://github.com/agentdesktop-dev/agentdesktop/pull/277) | build(deps): replace unmaintained humantime-serde with jiff | yuval-k | 2026-11-19 |
+| agentdesktop | [#275](https://github.com/agentdesktop-dev/agentdesktop/pull/275) | build(deps): bump the rust group with 3 updates (tauri 2.12.6) | dependabot[bot] | 2026-11-19 |
+| agentdesktop | [#274](https://github.com/agentdesktop-dev/agentdesktop/pull/274) | build(deps): bump the ui group in /frontend with 2 updates | dependabot[bot] | 2026-11-19 |
+| agentdesktop | [#273](https://github.com/agentdesktop-dev/agentdesktop/pull/273) | build(deps): bump library/rust 1.99.0 → 1.99.1-trixie | dependabot[bot] | 2026-11-19 |
+| agentdesktop | [#272](https://github.com/agentdesktop-dev/agentdesktop/pull/272) | build(deps): bump library/node 26.11.1 → 26.13.1-bookworm | dependabot[bot] | 2026-11-19 |
+| agentdesktop | [#271](https://github.com/agentdesktop-dev/agentdesktop/pull/271) | build(deps): bump chainguard/glibc-dynamic `4cefd4a` → `3359c6b` | dependabot[bot] | 2026-11-19 |
+
+Also closed 11-19 and already in yesterday's report: [#265](https://github.com/agentdesktop-dev/agentdesktop/pull/265), [#266](https://github.com/agentdesktop-dev/agentdesktop/pull/266).
 
 `website`: **none in window** (no commits, PRs or releases; last activity 2026-10-30).
 
 ## Watch list
 
-- **[PR #240](https://github.com/agentdesktop-dev/agentdesktop/pull/240) (open, breaking)** — JWKS moves to a dedicated `gatewayListener` (`127.0.0.1:8444`, Helm `<release>-gateway` Service); the fleet listener stops serving HTTP/1. **Test on omni-viper**: repoint agentgateway's JWKS URL before upgrading the controller, enable `gatewayListener.tls: true`, and verify Copilot CLI / Claude Code / Pi / OpenCode still authenticate.
-- **[PR #236](https://github.com/agentdesktop-dev/agentdesktop/pull/236) landed on `main` but is unreleased** — v0.6.0 agents are incompatible with a `main` controller. Use matching builds; run migration `0005_enrollment_receipts`.
-- **[PR #257](https://github.com/agentdesktop-dev/agentdesktop/pull/257) (open)** — Muse Code discovery + managed gateway config: new agent surface, worth an early look.
-- **[PR #267](https://github.com/agentdesktop-dev/agentdesktop/pull/267) (open)** — operator-signed-token enrollment: possible zero-touch/MDM onboarding path.
-- **[PR #261](https://github.com/agentdesktop-dev/agentdesktop/pull/261) (open)** — fleet-limit follow-ups to #237; known gaps: no per-device rate limit on authenticated calls, no refusal metrics, `LimitNOFILE` tuning.
-- **[PR #256](https://github.com/agentdesktop-dev/agentdesktop/pull/256) (open)** — CI/supply-chain pins, `cargo-deny`, NetworkPolicy; may change deploy manifests.
-- **[PR #196](https://github.com/agentdesktop-dev/agentdesktop/pull/196) (open, long-running)** — system daemon managing Pi for one configured user; relevant to Pi-through-agentgateway demos. Also open: **[PR #259](https://github.com/agentdesktop-dev/agentdesktop/pull/259) (draft)** control-plane threat model + local config limits (expect config/schema churn).
+- **Test on omni-viper before any `main` upgrade:** agentgateway JWKS → `gatewayListener` (`127.0.0.1:8444` / `<release>-gateway` Service) with `tls: true`; then re-verify Copilot CLI, Claude Code, Pi and OpenCode authenticate. Also run migration `0005_enrollment_receipts` (from #236) and re-validate every YAML for duplicate keys (#256).
+- **Combination risk:** #236 (enrollment rewrite, unreleased) + #240 (listener/config renames, unreleased) + #265 (JWT v12) all landed on `main` with no release since v0.6.0. Use matched controller/agent builds and expect config churn — this is the v0.7.0 breaking set.
+- [#261](https://github.com/agentdesktop-dev/agentdesktop/pull/261) (open) — fleet-limit follow-ups to #237: eviction ordering, per-device message budget, zero-limit validation. Known gap: a dead `Connect` stream holds a connection ~50 s at a full cap.
+- [#267](https://github.com/agentdesktop-dev/agentdesktop/pull/267) (open) — operator-signed-token enrollment (migration `0006`, `revokedIds` revocation); no LLM-gateway credential until the `AttachUser` follow-up.
+- [#257](https://github.com/agentdesktop-dev/agentdesktop/pull/257) (open) — Muse Code discovery + managed gateway config; gateway must also route `/muse-code/models`; needs `bearer_refresh_secs` for long idle sessions.
+- [#244](https://github.com/agentdesktop-dev/agentdesktop/pull/244) (draft, updated 11-19) — fleet configuration API design: `PUT /api/v1/daemon-config` with revisions; moves `daemon.yaml` out of the Helm `checksum/config` ConfigMap.
+- [#259](https://github.com/agentdesktop-dev/agentdesktop/pull/259) (draft) — control-plane threat model + local limits on controller-pushed config; expect config/schema churn.
+- [#203](https://github.com/agentdesktop-dev/agentdesktop/pull/203) (open, large) — Windows AppContainer sandboxed launches for Claude Code / OpenCode / Copilot CLI via a `/sandbox` relay; demo-worthy but Windows-only and needs a manually installed `wxc-exec.exe`.
+- Longer-running opens: [#239](https://github.com/agentdesktop-dev/agentdesktop/pull/239) admin audit logging, [#180](https://github.com/agentdesktop-dev/agentdesktop/pull/180) Prometheus `/metrics`, [#196](https://github.com/agentdesktop-dev/agentdesktop/pull/196) system daemon manages Pi for one user, [#162](https://github.com/agentdesktop-dev/agentdesktop/pull/162) browser PAC report, [#243](https://github.com/agentdesktop-dev/agentdesktop/pull/243) version-detection fixes.
