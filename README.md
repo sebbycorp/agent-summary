@@ -1,37 +1,36 @@
 # agent-summary
 
 Daily findings from [kagent](https://kagent.dev) agents running on **Agent Substrate** (cluster `omni-viper`).
-Every report below is written and committed by an agent from its sandbox; this page is rewritten each
-morning by the `agent-summary-digest` agent.
+Every report is written and committed by an agent from its sandbox; this page is rewritten each morning
+by the `agent-summary-digest` agent.
 
 ## Today's highlights - 2026-11-20
 
-**Bottom line:** 6 of 7 reports arrived today and 2 need action - the top item is FortiOS **v7.4.11** on `fw-maniak-hq`, affected by 3 CRITICAL and 1 HIGH PSIRT advisories that are all fixed in **7.4.13**, while the `k8s-cve` run (Argo CD CVSS 10.0, still unpatched) did not publish today.
+**Bottom line:** 5 of 7 reports arrived today and 2 need action - top item is FortiOS **v7.4.11** on `fw-maniak-hq`, hit by 3 CRITICAL and 1 HIGH PSIRT advisories all fixed in **7.4.13**.
 
 ### Action needed
 
-- **fortiguard-cve** - FortiOS **v7.4.11 build 2878** on `fw-maniak-hq` (FortiGate 80F) is affected by CVE-2026-126254 (9.6 CRITICAL, bgp daemon), CVE-2026-126253 (9.3 CRITICAL, ospf authentication bypass), CVE-2026-126259 (9.0 CRITICAL, unauthenticated HA command execution) and CVE-2026-126255 (7.4 HIGH, sshd) - all four fixed in FortiOS **7.4.13**; until upgraded, use virtual patch FG-VD-61445.0day (FMWP db 26.082) plus the HA/FGSP encryption mitigations and restrict OSPF/BGP peering. [Details](reports/fortiguard-cve/latest.md)
-- **kagent-updates** - the nginx fix is still not on the branch we run: backport [#3732](https://github.com/kagent-dev/kagent/pull/3732) to `release/v1.0.x` is open with `mergeable_state: blocked` and that branch had no commits, so kagent-enterprise **1.0.0-alpha12 ships nginx 1.31.8** - keep HTTP/2 off or rebuild the UI image ([#3738](https://github.com/kagent-dev/kagent/pull/3738) fixes the v0.10.6 image CVEs). [Details](reports/kagent-updates/latest.md)
-- **k8s-cve** *(report stale - last run 2026-11-19, did not publish today)* - Argo CD **v3.5.3** still carries **CVE-2026-77459** (CVSS 10.0, AppProject restrictions bypassed by hooks) and **CVE-2026-55797** (9.9, repo-server command injection), fix in **3.5.4**; flannel `v0.27.2`, local-path-provisioner `v0.0.31`, CoreDNS `v1.12.3` (12 CVEs) and containerd `2.2.7` also unpatched - the audit asks for a re-run. [Details](reports/k8s-cve/latest.md)
+- **fortiguard-cve** - FortiOS **v7.4.11 build 2878** on `fw-maniak-hq` (FortiGate 80F) is affected by CVE-2026-126254 (9.6 CRITICAL, bgp), CVE-2026-126253 (9.3 CRITICAL, ospf auth bypass), CVE-2026-126259 (9.0 CRITICAL, HA) and CVE-2026-126255 (7.4 HIGH, sshd) - all fixed in **7.4.13**; interim: virtual patch FG-VD-61445.0day (FMWP db 26.082), HA/FGSP encryption. [Details](reports/fortiguard-cve/latest.md)
+- **kagent-updates** - nginx fix still not on our branch: backport [#3732](https://github.com/kagent-dev/kagent/pull/3732) to `release/v1.0.x` is `mergeable_state: blocked`, so kagent-enterprise **1.0.0-alpha12 ships nginx 1.31.8** - keep HTTP/2 off or rebuild the UI image. [Details](reports/kagent-updates/latest.md)
+- **k8s-cve** *(stale, last run 2026-11-19)* - Argo CD **v3.5.3** still carries **CVE-2026-77459** (CVSS 10.0, AppProject bypass via hooks) and **CVE-2026-55797** (9.9, repo-server injection), fix **3.5.4**; flannel `v0.27.2`, local-path-provisioner `v0.0.31`, CoreDNS `v1.12.3` (12 CVEs), containerd `2.2.7` unpatched. [Details](reports/k8s-cve/latest.md)
 
 ### Worth knowing
 
-- **agentdesktop-updates** - breaking gateway-JWKS split ([#240](https://github.com/agentdesktop-dev/agentdesktop/pull/240)) on `main`: `/.well-known/jwks.json` is now served only by the new `gatewayListener` (default `127.0.0.1:8444`, `tls`), the fleet listener refuses HTTP/1, and `fleetListen`/`adminListen` are renamed with the old keys rejected - **repoint every agentgateway JWKS URL first**; nothing released yet, latest is still [v0.6.0](https://github.com/agentdesktop-dev/agentdesktop/releases/tag/v0.6.0). [Details](reports/agentdesktop-updates/latest.md)
-- **agentdesktop-updates** - supply-chain hardening ([#256](https://github.com/agentdesktop-dev/agentdesktop/pull/256)): Dockerfile bases pinned by digest, `cargo-deny` CI, Actions pinned to SHAs, optional Helm `NetworkPolicy`, and `serde_yaml` -> `serde-saphyr` (duplicate keys now an error) - validate `controller.yaml` before a demo upgrade; ignored advisory RUSTSEC-2026-0459 (bundled SQLite) still open. [Details](reports/agentdesktop-updates/latest.md)
-- **agentgateway-updates** - config can no longer read arbitrary files: new top-level `config.fileAccess` allow/deny ([#4431](https://github.com/agentgateway/agentgateway/pull/4431), new `schema/config.json` key - update the hardened-tenant demo YAML), and backend mTLS can come from pod files with hot reload ([#3872](https://github.com/agentgateway/agentgateway/pull/3872)); 18 merges, no CVEs against org-owned code, still no 1.8 tag. [Details](reports/agentgateway-updates/latest.md)
-- **agentgateway-updates** - open **breaking** [#4430](https://github.com/agentgateway/agentgateway/pull/4430) changes the default `agentgateway.user` to `jwt.email` -> `jwt.sub` -> API-key metadata, dropping `apiKey.name` (pin `standardAttributes.user` to keep request-log history); KEDA `ScaledObject` PR [#4471](https://github.com/agentgateway/agentgateway/pull/4471) was closed unmerged 11-19. [Details](reports/agentgateway-updates/latest.md)
-- **kagent-updates** - `main`-only breaking changes now documented: gateway `x-user-id` becomes span attribute **`user.id`, not `enduser.id`** ([#3552](https://github.com/kagent-dev/kagent/pull/3552)) and **`azureAdToken` removed from `ModelConfig`** ([#3651](https://github.com/kagent-dev/kagent/pull/3651)) - docs are ahead of alpha12, verify each against our build. [Details](reports/kagent-updates/latest.md)
-- **kagent-updates** - OpenShift SCC friction fixed in substrate `main` ([#180](https://github.com/kagent-dev/substrate/pull/180)) but it is post-tag, so OpenShift still needs an `anyuid`/`nonroot-v2` grant until the next release; the tools PDB rework [#106](https://github.com/kagent-dev/tools/pull/106) is likewise not in v0.3.1. [Details](reports/kagent-updates/latest.md)
+- **agentdesktop-updates** - breaking gateway-JWKS split (PR 240): `/.well-known/jwks.json` now only on the new `gatewayListener` (`127.0.0.1:8444`, `tls`), fleet listener refuses HTTP/1, `fleetListen`/`adminListen` renamed, old keys rejected - **repoint agentgateway JWKS URLs first**; unreleased, latest [v0.6.0](https://github.com/agentdesktop-dev/agentdesktop/releases/tag/v0.6.0). [Details](reports/agentdesktop-updates/latest.md)
+- **agentdesktop-updates** - supply-chain hardening (PR 256): bases pinned by digest, `cargo-deny` CI, optional Helm `NetworkPolicy`, `serde_yaml` -> `serde-saphyr` (duplicate keys now an error); RUSTSEC-2026-0459 (bundled SQLite) still ignored. [Details](reports/agentdesktop-updates/latest.md)
+- **agentgateway-updates** - config can no longer read arbitrary files: new `config.fileAccess` allow/deny (PR 4431 - update the hardened-tenant demo YAML); backend mTLS from pod files, hot-reloaded (PR 3872). No 1.8 tag; no org-code CVEs. [Details](reports/agentgateway-updates/latest.md)
+- **agentgateway-updates** - open **breaking** PR 4430 makes default `agentgateway.user` `jwt.email` -> `jwt.sub` -> API-key metadata, dropping `apiKey.name` - pin `standardAttributes.user`. [Details](reports/agentgateway-updates/latest.md)
+- **kagent-updates** - `main`-only breaking changes documented: gateway `x-user-id` becomes span attribute **`user.id`, not `enduser.id`** (PR 3552) and **`azureAdToken` removed from `ModelConfig`** (PR 3651) - verify against alpha12. [Details](reports/kagent-updates/latest.md)
 
 ### Report status
 
 | Report | Status | Verdict | Today | History |
 | --- | --- | --- | --- | --- |
-| [fortiguard-cve](reports/fortiguard-cve/latest.md) | ACTION | ACTION NEEDED - FortiOS 7.4.11 affected by 3 CRITICAL and 1 HIGH PSIRT advisories, all fixed in 7.4.13 | [2026-11-20](reports/fortiguard-cve/2026/2026-11-20.md) | [all](reports/fortiguard-cve/) |
-| [kagent-updates](reports/kagent-updates/latest.md) | ACTION | No kagent releases or merges; nginx CVE unpatched on alpha12 branch - keep HTTP/2 off or rebuild UI image | [2026-11-20](reports/kagent-updates/2026/2026-11-20.md) | [all](reports/kagent-updates/) |
-| [agentgateway-updates](reports/agentgateway-updates/latest.md) | WATCH | File-access lockdown #4431 and backend mTLS #3872 merged; 18 merges, no 1.8 tag, no org-code CVEs | [2026-11-20](reports/agentgateway-updates/2026/2026-11-20.md) | [all](reports/agentgateway-updates/) |
-| [agentdesktop-updates](reports/agentdesktop-updates/latest.md) | WATCH | Breaking gateway-JWKS listener split #240 plus supply-chain hardening on main; latest release still v0.6.0 | [2026-11-20](reports/agentdesktop-updates/2026/2026-11-20.md) | [all](reports/agentdesktop-updates/) |
-| [fortigate-health](reports/fortigate-health/latest.md) | OK | HEALTHY - every counter far below the 80% flag line; CPU idle, memory ~38%, sessions within 80F capacity | [2026-11-20](reports/fortigate-health/2026/2026-11-20.md) | [all](reports/fortigate-health/) |
+| [fortiguard-cve](reports/fortiguard-cve/latest.md) | ACTION | 3 CRITICAL + 1 HIGH FortiOS advisories hit 7.4.11, all fixed in 7.4.13 | [2026-11-20](reports/fortiguard-cve/2026/2026-11-20.md) | [all](reports/fortiguard-cve/) |
+| [kagent-updates](reports/kagent-updates/latest.md) | ACTION | Nginx CVE unpatched on the alpha12 branch - HTTP/2 off or rebuild the UI image | [2026-11-20](reports/kagent-updates/2026/2026-11-20.md) | [all](reports/kagent-updates/) |
+| [agentgateway-updates](reports/agentgateway-updates/latest.md) | WATCH | File-access lockdown 4431, backend mTLS 3872; no 1.8 tag yet | [2026-11-20](reports/agentgateway-updates/2026/2026-11-20.md) | [all](reports/agentgateway-updates/) |
+| [agentdesktop-updates](reports/agentdesktop-updates/latest.md) | WATCH | Breaking JWKS listener split 240 + supply-chain hardening; latest release v0.6.0 | [2026-11-20](reports/agentdesktop-updates/2026/2026-11-20.md) | [all](reports/agentdesktop-updates/) |
+| [fortigate-health](reports/fortigate-health/latest.md) | OK | HEALTHY - all counters well under the 80% line; CPU idle, memory ~38% | [2026-11-20](reports/fortigate-health/2026/2026-11-20.md) | [all](reports/fortigate-health/) |
 | [k8s-cve](reports/k8s-cve/latest.md) | MISSING | - | - | [all](reports/k8s-cve/) |
 | redteam-posture | MISSING | - | - | - |
 
