@@ -1,62 +1,57 @@
-# agentgateway-updates - 2026-11-20
+# agentgateway-updates - 2026-11-21
 
-**File-access lockdown shipped: config deny/allowlist (#4431) + backend mTLS from pod files with hot reload (#3872). MCP `clientId` registration now works with any IdP (#4477), CoreWeave Serverless added (#4463), catalog refreshed (#4480). 18 merges in ~24h (11 `agentgateway`, 7 `website`). Still no 1.8 tag.**
+**Pre-1.8 backfill day: the long-tail breaking changes landed at once - AWS native endpoints by default (#4300), JWT-email default user (#4430), Azure Content Safety guards in Kubernetes mode (#4205), initial MCP "Skills" (#4214). 23 merges (21 `agentgateway`, 2 `website`); still no 1.8 tag, but four "1.8" doc drafts open.**
 
-_Window: merged `>=2026-11-19T13:00Z` (yesterday's digest covered `#4365`, `#1564`). `benchmarks` and `community` idle._
+_Window: merged `>=2026-11-20T01:03Z`; yesterday's digest covered #3872, #4431, #4480, #4477, #4463, #4468, #4479. `benchmarks`/`community` idle._
 
 ## Releases
 
-**None published in window** — below the Oct 27 cut everything is nightly / `:latest-dev`.
+**None published** - everything after the Oct 27 cut is nightly / `:latest-dev`.
 
 | Repo | Latest stable | Latest pre-release |
 | --- | --- | --- |
 | agentgateway | [v1.7.0](https://github.com/agentgateway/agentgateway/releases/tag/v1.7.0) (10-27) | [v1.7.0-rc.1](https://github.com/agentgateway/agentgateway/releases/tag/v1.7.0-rc.1) (10-26) |
-| website | [v1.7.0](https://github.com/agentgateway/website/releases/tag/v1.7.0) (10-27) | – |
+| website | [v1.7.0](https://github.com/agentgateway/website/releases/tag/v1.7.0) (10-27) | - |
 
 ## Highlights
 
-- **Config can't read arbitrary files — new `fileAccess`** ([4431](https://github.com/agentgateway/agentgateway/pull/4431), howardjohn). Top-level `config.fileAccess: {allow, deny}` gates every `ResourceRef::File` read in config-API validation, cached and uncached. Builtin deny `/dev`, `/proc`, `/sys`; longest prefix wins, ties → `deny`; the path *and* its canonicalized target must be a regular file; empty `allow` = anything passing deny. New `schema/config.json` key — update hardened-tenant demo YAML. Corrects yesterday's note: merged, not open.
-- **Backend mTLS from pod files, hot-reloaded** ([3872](https://github.com/agentgateway/agentgateway/pull/3872), mingcui-yang, fixes #3001). `mtlsCertificateRef` on `AgentgatewayBackend`/`AgentgatewayPolicy` takes `kind: File` (`cert`/`key`/optional `root`); the controller only forwards paths over xDS — the gateway reads and watches them. Unblocks external cert rotators with no Secret-sync component; pairs with #4431 for the zero-trust slide.
-- **MCP `clientId` works with every provider, or none** ([4477](https://github.com/agentgateway/agentgateway/pull/4477), jamesilse). Only Keycloak/Okta/Descope/Authentik/Entra used to suppress the IdP's dynamic-registration endpoint, so Auth0/PingFederate clients died there. Now `clientId` makes the gateway advertise its own registration endpoint and itself as authorization server in both metadata docs, keeping the IdP's authorize/token endpoints; plus OpenID-config discovery fallback, RFC 8414 trailing-slash matching, `signed_metadata` dropped on issuer rewrite. **Fixes the non-Okta/Entra MCP auth demo.**
-- **CoreWeave Serverless Inference** ([4463](https://github.com/agentgateway/agentgateway/pull/4463), jmcshane): Completions-only preset; LoRA via `wandb-artifact:///<team>/<project>/<artifact>:<version>` in `model`. New proto enum + CRD `ModelProvider: CoreWeave`, UI icon, LiteLLM `wandb/`+`coreweave/`. Docs open ([website#1562](https://github.com/agentgateway/website/pull/1562)).
-- **OAuth token-exchange cache keys input-complete** ([4468](https://github.com/agentgateway/agentgateway/pull/4468)) — differing initial vs chained parameter layouts can no longer share a cache entry.
-- **Catalog refresh** ([4480](https://github.com/agentgateway/agentgateway/pull/4480)): GPT-6.2 Astra/Sol (`ultrafast`/`flex` tiers, `cacheWriteDetails.12h`), Gemini 4 Neon, MAI Code 2, GPT-Live 1.1, Hy4 flash, Qwen3-30B-A3B, Llama 3.1/3.2. `gpt-6.2-sol` is `temperature: false` (the block it displaced was `true`) — re-shoot the cost dashboard.
-- **Deps**: tiktoken git fork → crates.io 5.0.1 ([4479](https://github.com/agentgateway/agentgateway/pull/4479)); bindgen/prettyplease on `syn 3`, fixing FIPS builds ([4475](https://github.com/agentgateway/agentgateway/pull/4475)); weekly bump ([4458](https://github.com/agentgateway/agentgateway/pull/4458)) = pingora 0.9.1 (panic on every accepted connection with tokio ≥1.54; zstd 0.14.3 past RustSec IDs), arc-swap 1.9.5.
-- **UI/docs**: UI off the monolithic API toward resource list APIs ([4461](https://github.com/agentgateway/agentgateway/pull/4461)); hybrid note that local rate limits are per-instance, use Remote for a shared ceiling ([4466](https://github.com/agentgateway/agentgateway/pull/4466)) — gotcha for 3-replica demos. docs-theme-extras v0.5.2 fixes anchors under the sticky header ([1563](https://github.com/agentgateway/website/pull/1563)); the screenshot refresh merged **with a failed `latest main` capture** ([1559](https://github.com/agentgateway/website/pull/1559)).
-
-No CVEs against org-owned code in window; security items are dependency-level or hardening (#4431, #4468).
+- **AWS native LLM endpoints by default** ([4300](https://github.com/agentgateway/agentgateway/pull/4300), **breaking**, fixes #4098). Bedrock moves from translated `converse` to `/chat/completions`, `/messages`, `/responses` (AWS's abstraction over `invoke`). Flag remains, only the default flipped - but it needs a **different IAM role**. Re-check demo policy before `:latest-dev`.
+- **Default `agentgateway.user` prefers JWT email** ([4430](https://github.com/agentgateway/agentgateway/pull/4430), **breaking**). `jwt.email` -> `jwt.sub` -> API-key metadata; `apiKey.name` dropped as a key label. Log/analytics history splits across the upgrade; UI-created keys become owned by creator email. Pin `standardAttributes.user` for old behaviour.
+- **Azure Content Safety guards in Kubernetes mode** ([4205](https://github.com/agentgateway/agentgateway/pull/4205), fixes #3569, +2867/-446, 20 files). New CRD definitions, fail-closed/fail-open from #3618, proto lets `detectJailbreak` stand alone, user policies ordered ahead of implicit auth. **Biggest CRD/API change of the window** - regenerate manifests.
+- **MCP "Skills" extension, initial support** ([4214](https://github.com/agentgateway/agentgateway/pull/4214), #3579). No multiplexing yet - [4490](https://github.com/agentgateway/agentgateway/pull/4490) still open; don't promise it in the roadmap slide.
+- **GenAI telemetry: `gen_ai.response.id` + `gen_ai.response.finish_reasons`** ([4483](https://github.com/agentgateway/agentgateway/pull/4483), part of #4482, 169 files). Also CEL `llm.responseId`/`llm.finishReasons`; all chat routes, buffered and streaming; Responses status mapped `completed`->`stop`, `failed`->`error`; string lists export as OTel arrays. Fresh observability-demo material.
+- **LB fallback correctness** ([4497](https://github.com/agentgateway/agentgateway/pull/4497)). `select_fallback` now prefers any viable *active* endpoint across all buckets before rejected ones, matching `select_affinity`; previously an all-rejected bucket could beat a later healthy pod - the source of rollout/drain flakiness.
+- **Hardening**: stable config-store UIDs ([4464](https://github.com/agentgateway/agentgateway/pull/4464)); `basicAuth` bcrypt cost capped ([4405](https://github.com/agentgateway/agentgateway/pull/4405), closes a CPU-DoS from crafted high-cost hashes). No CVEs against org-owned code in window.
+- **Also demo-visible**: Gemini structured output via `responseJsonSchema` ([4261](https://github.com/agentgateway/agentgateway/pull/4261)); `buffer` back under normal policy hierarchy ([4491](https://github.com/agentgateway/agentgateway/pull/4491)); settings drawers stop writing unchanged fields, incl. the `stateless`-vs-`stateful` default bug ([4501](https://github.com/agentgateway/agentgateway/pull/4501)); PowerShell installer for Windows ([4478](https://github.com/agentgateway/agentgateway/pull/4478)).
 
 ## Merged PRs by repo
 
-**18 merges** (11 `agentgateway`, 7 `website`); none in `benchmarks`/`community`.
+**23 merges** (21 `agentgateway`, 2 `website`); none in `benchmarks`/`community`. All merged 11-20.
 
 | Repo | PR | Title | Author | Merged |
 | --- | --- | --- | --- | --- |
-| agentgateway | [3872](https://github.com/agentgateway/agentgateway/pull/3872) | backend mTLS from local files + hot reload | mingcui-yang | 11-20 |
-| agentgateway | [4431](https://github.com/agentgateway/agentgateway/pull/4431) | config: deny/allowlist referenced files | howardjohn | 11-20 |
-| agentgateway | [4480](https://github.com/agentgateway/agentgateway/pull/4480) | Fix model catalog refresh | howardjohn | 11-19 |
-| agentgateway | [4477](https://github.com/agentgateway/agentgateway/pull/4477) | fix(mcp): clientId registration, any provider | jamesilse | 11-19 |
-| agentgateway | [4463](https://github.com/agentgateway/agentgateway/pull/4463) | llm: add coreweave provider | jmcshane | 11-19 |
-| agentgateway | [4468](https://github.com/agentgateway/agentgateway/pull/4468) | oauth: token exchange cache inputs | markuskobler | 11-19 |
-| agentgateway | [4479](https://github.com/agentgateway/agentgateway/pull/4479) | Move off tiktoken fork | howardjohn | 11-19 |
-| agentgateway | [4461](https://github.com/agentgateway/agentgateway/pull/4461) | ui: resource list APIs | howardjohn | 11-19 |
-| agentgateway | [4466](https://github.com/agentgateway/agentgateway/pull/4466) | ui: per-instance rate limits in hybrid | jamesilse | 11-19 |
-| agentgateway | [4475](https://github.com/agentgateway/agentgateway/pull/4475) · [4458](https://github.com/agentgateway/agentgateway/pull/4458) | build: FIPS syn 3; cargo-weekly | markuskobler, dependabot | 11-19 |
-| website | [1565](https://github.com/agentgateway/website/pull/1565) | docs(blog): Codex Entra ID sign-in (part 2) | sebbycorp | 11-19 |
-| website | [1563](https://github.com/agentgateway/website/pull/1563) | Bump docs-theme-extras to v0.5.2 | kristin-kronstain-brown | 11-19 |
-| website | [1559](https://github.com/agentgateway/website/pull/1559) | product-UI screenshots (partial) | github-actions[bot] | 11-19 |
-
-+3 more: blog covers [1566](https://github.com/agentgateway/website/pull/1566), doc-test scoping [1540](https://github.com/agentgateway/website/pull/1540), reference docs [1557](https://github.com/agentgateway/website/pull/1557)/[1558](https://github.com/agentgateway/website/pull/1558).
+| agentgateway | [4300](https://github.com/agentgateway/agentgateway/pull/4300) | **(breaking)** llm: native endpoints by default on AWS | howardjohn | 11-20 |
+| agentgateway | [4430](https://github.com/agentgateway/agentgateway/pull/4430) | **(breaking)** prefer JWT email for the default user | howardjohn | 11-20 |
+| agentgateway | [4205](https://github.com/agentgateway/agentgateway/pull/4205) | controller: azureContentSafety prompt guards | jgreeer | 11-20 |
+| agentgateway | [4214](https://github.com/agentgateway/agentgateway/pull/4214) | mcp: initial "Skills" extension support | howardjohn | 11-20 |
+| agentgateway | [4483](https://github.com/agentgateway/agentgateway/pull/4483) | telemetry: gen_ai.response.id + finish_reasons | krisztianfekete | 11-20 |
+| agentgateway | [4497](https://github.com/agentgateway/agentgateway/pull/4497) | lb: prefer active endpoints in fallback | howardjohn | 11-20 |
+| agentgateway | [4464](https://github.com/agentgateway/agentgateway/pull/4464) · [4405](https://github.com/agentgateway/agentgateway/pull/4405) | config store: stable UIDs; basicAuth bcrypt cost cap | howardjohn | 11-20 |
+| agentgateway | [4261](https://github.com/agentgateway/agentgateway/pull/4261) | llm: Gemini structured-output schemas | dongjiang1989 | 11-20 |
+| agentgateway | [4408](https://github.com/agentgateway/agentgateway/pull/4408) | llm: normalize response model lookup on azure | howardjohn | 11-20 |
+| agentgateway | [4501](https://github.com/agentgateway/agentgateway/pull/4501) · [4492](https://github.com/agentgateway/agentgateway/pull/4492) | ui: drawers write only edits; llm policy needs no settings row | howardjohn, stevenctl | 11-20 |
+| agentgateway | [4491](https://github.com/agentgateway/agentgateway/pull/4491) | policy: buffer respects policy hierarchy | howardjohn | 11-20 |
+| agentgateway | [4487](https://github.com/agentgateway/agentgateway/pull/4487) · [4406](https://github.com/agentgateway/agentgateway/pull/4406) · [4398](https://github.com/agentgateway/agentgateway/pull/4398) | mcp/llm settings from file config; provider-key catalogs; unblock db runtime | howardjohn | 11-20 |
+| agentgateway | [4500](https://github.com/agentgateway/agentgateway/pull/4500) · [4499](https://github.com/agentgateway/agentgateway/pull/4499) · [4481](https://github.com/agentgateway/agentgateway/pull/4481) · [4460](https://github.com/agentgateway/agentgateway/pull/4460) · [4478](https://github.com/agentgateway/agentgateway/pull/4478) | model-discovery logs; copilot integrator id; catalog; build fixes; PowerShell installer | howardjohn, bot, sebbycorp | 11-20 |
+| website | [1570](https://github.com/agentgateway/website/pull/1570) · [1561](https://github.com/agentgateway/website/pull/1561) | automated reference docs; params.llms.rootNote | bot, artberger | 11-20 |
 
 ## Watch list
 
 | Item | Why |
 | --- | --- |
-| [4430](https://github.com/agentgateway/agentgateway/pull/4430) | **(breaking, open)** default `agentgateway.user` → `jwt.email` → `jwt.sub` → API-key metadata, dropping `apiKey.name`: splits request-log history across the upgrade, changes UI API-key ownership. Pin `standardAttributes.user` for old behaviour. |
-| [#4205](https://github.com/agentgateway/agentgateway/pull/4205) · [4394](https://github.com/agentgateway/agentgateway/pull/4394) | Azure Content Safety guards + dropping the deprecated nested guard `policies` from #4387 (next CRD/API change, real size win); isolate remote JWKS fetch failures — last unmerged auth change now #4431 is in. |
-| [4469](https://github.com/agentgateway/agentgateway/pull/4469) · [4455](https://github.com/agentgateway/agentgateway/pull/4455) · [4369](https://github.com/agentgateway/agentgateway/pull/4369) | Delegated-provider health separation; Entra federated credentials; `privateKeyJwt` capped at 300s — enterprise delegated/OAuth demos. |
-| [4464](https://github.com/agentgateway/agentgateway/pull/4464) · [4473](https://github.com/agentgateway/agentgateway/pull/4473) · [4453](https://github.com/agentgateway/agentgateway/pull/4453) | Stable config-store UIDs; **new draft** multiple MCP endpoints in standalone; reject `server/discover` for stdio/SSE. |
-| [4471](https://github.com/agentgateway/agentgateway/pull/4471) | KEDA `ScaledObject` in standalone Helm **closed unmerged 11-19** — drop from the autoscaling slide unless resubmitted. |
-| website [1568](https://github.com/agentgateway/website/pull/1568)–[1573](https://github.com/agentgateway/website/pull/1573) | Azure/AKS docs: scopes, managed identity, embeddings, capability matrix, AKS CRDs. |
+| website [1576](https://github.com/agentgateway/website/pull/1576)·[1577](https://github.com/agentgateway/website/pull/1577)·[1578](https://github.com/agentgateway/website/pull/1578)·[1579](https://github.com/agentgateway/website/pull/1579) | **Strongest 1.8 signal yet**: draft "1.8" docs for guardrails, Gateway API **v1.7 move**, LLM providers/catalog, data-plane metrics. v1.7 = CRD churn; refresh omni-viper manifests. |
+| [4490](https://github.com/agentgateway/agentgateway/pull/4490) · [4345](https://github.com/agentgateway/agentgateway/pull/4345) · [4493](https://github.com/agentgateway/agentgateway/pull/4493) | MCP Skills multiplexing; guardrails on errors/server messages and request-phase `tasks/*`. |
+| [4488](https://github.com/agentgateway/agentgateway/pull/4488) · [4473](https://github.com/agentgateway/agentgateway/pull/4473) · [4505](https://github.com/agentgateway/agentgateway/pull/4505) | Weaver telemetry registry (draft); multiple MCP endpoints in standalone; **Substrate** router/egress alignment (draft). |
+| [4469](https://github.com/agentgateway/agentgateway/pull/4469) · [4503](https://github.com/agentgateway/agentgateway/pull/4503) · [4502](https://github.com/agentgateway/agentgateway/pull/4502) | Delegated-provider/health reporting, budgets stale-write fix, in-tree SSE decoder (streaming regression risk). |
 
-Re-test on omni-viper with `:latest-dev`: #4431 `/dev` + non-regular-file blocks; #3872 cert rotation; #4477 vs a no-provider IdP; #4463 `wandb-artifact://` model; #4468 delegated OAuth; #4480 cost dashboard.
+Re-test on omni-viper with `:latest-dev`: **#4300** Bedrock IAM role, **#4430** user attribution/log split, **#4205** azureContentSafety CRD guards, **#4497** fallback during rollout, **#4483** OTel `gen_ai.response.id`, **#4501** MCP stateless/stateful default.
