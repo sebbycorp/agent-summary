@@ -1,16 +1,15 @@
-# _status - 2026-11-20
+# _status - 2026-11-21
 
-2 of 7 reports missing: redteam-posture (MISSING), k8s-cve (STALE — last report 2026-11-19)
+1 of 7 reports missing: redteam-posture (MISSING)
 
 | Report | Schedule | Status | Report date | Verdict |
 | --- | --- | --- | --- | --- |
 | redteam-posture | 07:00 (agent redteam-posture) | MISSING | – | No `reports/redteam-posture/` directory; no latest.md and no dated file |
-| agentgateway-updates | 08:00 (agent oss-update-watcher) | OK | 2026-11-20 | File-access lockdown shipped: config deny/allowlist (#4431) + backend mTLS from pod files with hot reload (#3872); MCP `clientId` works with any IdP (#4477), CoreWeave Serverless added (#4463); 18 merges in ~24h, still no 1.8 tag |
-| kagent-updates | 08:20 (agent oss-update-watcher) | OK | 2026-11-20 | No releases and zero merged PRs/commits in `kagent` itself — the window was docs and charts: substrate OpenShift SCC fix (#180), tools PDB rework (#106), website 10 PRs; 12 PRs merged across 3 repos |
-| agentdesktop-updates | 08:40 (agent oss-update-watcher) | OK | 2026-11-20 | Gateway-JWKS split (PR #240, breaking) and supply-chain hardening (#256) landed on `main` — no release yet, latest still v0.6.0; 8 PRs merged in `agentdesktop`, none in `website` |
-| fortigate-health | 09:00 (agent fortigate) | OK | 2026-11-20 | Verdict: HEALTHY — every resource counter far below the 80% flag line; CPU idle, memory ~38%, sessions and setup rate well within 80F capacity |
-| k8s-cve | 09:15 (agent k8s-cve-checker) | STALE | 2026-11-19 | (from 2026-11-19) Verdict: ACTION NEEDED — Argo CD v3.5.3 CVSS 10.0/9.9 (fix 3.5.4), plus unpatched flannel, containerd, local-path-provisioner and CoreDNS CVEs on omni-viper |
-| fortiguard-cve | 09:30 (agent fortigate-cve-watch) | OK | 2026-11-20 | Verdict: ACTION NEEDED — FortiOS 7.4.11 on fw-maniak-hq affected by 3 CRITICAL and 1 HIGH PSIRT advisory (all fixed in 7.4.13); plan the 7.4.13 upgrade or apply virtual patches/mitigations |
+| agentgateway-updates | 08:00 (agent oss-update-watcher) | OK | 2026-11-21 | Pre-1.8 backfill day: long-tail breaking changes landed at once — AWS native endpoints by default (#4300), JWT-email default user (#4430), Azure Content Safety guards in Kubernetes mode (#4205), initial MCP "Skills" (#4214); 23 merges (21 agentgateway, 2 website), still no 1.8 tag |
+| kagent-updates | 08:20 (agent oss-update-watcher) | OK | 2026-11-21 | No published releases anywhere; the day was security — nginx 1.31.9 HTTP/2 backport on `release/v1.0.x` (#3732) and v0.10.6 image CVEs fixed (#3738), while `main` re-pinned Substrate to v1.1.0-alpha1 (#3754); 12 PRs merged across 3 repos, zero in substrate |
+| agentdesktop-updates | 08:40 (agent oss-update-watcher) | OK | 2026-11-21 | Zero-touch enrollment (#267) and the fleet-limit follow-ups (#261) both merged — still no release, latest remains v0.6.0 so everything on `main` is unreleased; 2 PRs merged in agentdesktop, none in website |
+| fortigate-health | 09:00 (agent fortigate) | OK | 2026-11-21 | Verdict: HEALTHY — all resource counters well below the 80% threshold (highest: memory at 39%); no counter hit 80% at snapshot or in 24-h history |
+| k8s-cve | 09:15 (agent k8s-cve-checker) | OK | 2026-11-21 | Verdict: ACTION NEEDED — 2 unpatched CRITICAL advisories in in-cluster control-plane components (Argo CD v3.5.3 CVE-2026-77459; local-path-provisioner v0.0.31 CVE-2025-62878), plus unpatched HIGH cross-node RCE in flannel v0.27.2, HIGH in node containerd 2.2.7, and 12 unpatched CVEs in CoreDNS v1.12.3 |
+| fortiguard-cve | 09:30 (agent fortigate-cve-watch) | OK | 2026-11-21 | VERDICT: ACTION NEEDED — FortiOS 7.4.11 (build 2878) on fw-maniak-hq is inside the affected range (7.4.0–7.4.12) of four FortiGuard PSIRT advisories published 2026-11-10, three rated CRITICAL (CVSS 9.0 / 9.3 / 9.6); vendor fix is FortiOS 7.4.13, virtual patch exists for the HA flaw |
 
-Action: redteam-posture — no directory or file ever published under `reports/redteam-posture/`; check the schedule's execution history in the kagent UI (agent `redteam-posture`, due 07:00 America/Toronto).
-Action: k8s-cve — `latest.md` still shows 2026-11-19 and `reports/k8s-cve/2026/2026-11-20.md` is absent, so the 09:15 run did not publish; check the schedule's execution history in the kagent UI (agent `k8s-cve-checker`) and re-run — yesterday's findings (Argo CD CVSS 10.0, CoreDNS x12) are now 24h old.
+Action: redteam-posture — no directory or file has ever been published under `reports/redteam-posture/` (nothing in today's commit history either); check the schedule's execution history in the kagent UI (agent `redteam-posture`, due 07:00 America/Toronto) and re-run — this is the second consecutive day that report is absent.
