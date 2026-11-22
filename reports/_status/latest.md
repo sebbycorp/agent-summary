@@ -1,15 +1,15 @@
-# _status - 2026-11-21
+# _status - 2026-11-22
 
-1 of 7 reports missing: redteam-posture (MISSING)
+1 of 7 reports missing: redteam-posture
 
 | Report | Schedule | Status | Report date | Verdict |
 | --- | --- | --- | --- | --- |
-| redteam-posture | 07:00 (agent redteam-posture) | MISSING | – | No `reports/redteam-posture/` directory; no latest.md and no dated file |
-| agentgateway-updates | 08:00 (agent oss-update-watcher) | OK | 2026-11-21 | Pre-1.8 backfill day: long-tail breaking changes landed at once — AWS native endpoints by default (#4300), JWT-email default user (#4430), Azure Content Safety guards in Kubernetes mode (#4205), initial MCP "Skills" (#4214); 23 merges (21 agentgateway, 2 website), still no 1.8 tag |
-| kagent-updates | 08:20 (agent oss-update-watcher) | OK | 2026-11-21 | No published releases anywhere; the day was security — nginx 1.31.9 HTTP/2 backport on `release/v1.0.x` (#3732) and v0.10.6 image CVEs fixed (#3738), while `main` re-pinned Substrate to v1.1.0-alpha1 (#3754); 12 PRs merged across 3 repos, zero in substrate |
-| agentdesktop-updates | 08:40 (agent oss-update-watcher) | OK | 2026-11-21 | Zero-touch enrollment (#267) and the fleet-limit follow-ups (#261) both merged — still no release, latest remains v0.6.0 so everything on `main` is unreleased; 2 PRs merged in agentdesktop, none in website |
-| fortigate-health | 09:00 (agent fortigate) | OK | 2026-11-21 | Verdict: HEALTHY — all resource counters well below the 80% threshold (highest: memory at 39%); no counter hit 80% at snapshot or in 24-h history |
-| k8s-cve | 09:15 (agent k8s-cve-checker) | OK | 2026-11-21 | Verdict: ACTION NEEDED — 2 unpatched CRITICAL advisories in in-cluster control-plane components (Argo CD v3.5.3 CVE-2026-77459; local-path-provisioner v0.0.31 CVE-2025-62878), plus unpatched HIGH cross-node RCE in flannel v0.27.2, HIGH in node containerd 2.2.7, and 12 unpatched CVEs in CoreDNS v1.12.3 |
-| fortiguard-cve | 09:30 (agent fortigate-cve-watch) | OK | 2026-11-21 | VERDICT: ACTION NEEDED — FortiOS 7.4.11 (build 2878) on fw-maniak-hq is inside the affected range (7.4.0–7.4.12) of four FortiGuard PSIRT advisories published 2026-11-10, three rated CRITICAL (CVSS 9.0 / 9.3 / 9.6); vendor fix is FortiOS 7.4.13, virtual patch exists for the HA flaw |
+| redteam-posture | 07:00 (agent redteam-posture) | MISSING | – | No `reports/redteam-posture/` directory; no latest.md and no dated file for today |
+| agentgateway-updates | 08:00 (agent oss-update-watcher) | OK | 2026-11-22 | Quiet weekend: zero merges and zero commits in `agentgateway`, `website`, `benchmarks` and `community` since 2026-11-20T22:04Z - `main` is still at #4501. No releases. All the signal is forward-looking: 8 new open PRs, headlined by request-log retention (4512), JWT key `maxAge` (4142) and the Substrate router/egress rewrite (4505); 1.8 doc drafts now at six. |
+| kagent-updates | 08:20 (agent oss-update-watcher) | OK | 2026-11-22 | Quiet day: zero releases and one merged PR org-wide (kagent #3407, prompts-page namespace fix on `release/v0.10.x`); substrate `main` still idle at `fd66419` — but three new kagent PRs opened today all touch CRD/API surface (EgressPolicy `authentications`, RemoteMCPServer TLS CEL, MCP tool disambiguation). |
+| agentdesktop-updates | 08:40 (agent oss-update-watcher) | OK | 2026-11-22 | Quiet day: no merges, no commits to `main`, no releases since the 11-21 report — `main` still sits at `b57329c` (#267, 11-20) and v0.6.0 is still the only shipped version; the only new upstream activity is draft PR #288, which fixes the agentgateway browser sign-in storm. |
+| fortigate-health | 09:00 (agent fortigate) | OK | 2026-11-22 | Verdict: HEALTHY — no resource counter above 80%; CPU idle, memory at 38%, sessions and setup rate well within FortiGate 80F limits. |
+| k8s-cve | 09:15 (agent k8s-cve-checker) | OK | 2026-11-22 | VERDICT: ACTION NEEDED — 1 CRITICAL (Argo CD), multiple HIGH (flannel CNI RCE, containerd, CoreDNS x12, Redis, nginx TLS sidecar) affecting running workloads in `argocd`, `kube-system`, `kagent`, `agentgateway-system`. |
+| fortiguard-cve | 09:30 (agent fortigate-cve-watch) | OK | 2026-11-22 | Verdict: ACTION NEEDED — FortiOS 7.4.11 falls inside the affected range of 4 new FortiOS PSIRT advisories (incl. 3 CRITICAL, one publicly exploited); upgrade to FortiOS 7.4.13. |
 
-Action: redteam-posture — no directory or file has ever been published under `reports/redteam-posture/` (nothing in today's commit history either); check the schedule's execution history in the kagent UI (agent `redteam-posture`, due 07:00 America/Toronto) and re-run — this is the second consecutive day that report is absent.
+Action: redteam-posture — still no `reports/redteam-posture/` directory at all (no `latest.md`, no `2026/2026-11-22.md`); check the schedule's execution history in the kagent UI (agent `redteam-posture`, due 07:00 America/Toronto) and re-run — this is now the third consecutive day that report is absent.
