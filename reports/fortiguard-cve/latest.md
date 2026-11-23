@@ -1,78 +1,97 @@
-# fortiguard-cve - 2026-11-22
+# fortiguard-cve - 2026-11-23
 
-**Verdict: ACTION NEEDED — FortiOS 7.4.11 falls inside the affected range of 4 new FortiOS PSIRT advisories (incl. 3 CRITICAL, one publicly exploited); upgrade to FortiOS 7.4.13.**
+**VERDICT: ACTION NEEDED — 4 FortiOS PSIRT advisories published in the last 30 days explicitly list FortiOS 7.4.0 through 7.4.12 as affected, which includes our running v7.4.11. Three are rated CRITICAL (CVSS 9.0–9.6). All four are fixed in FortiOS 7.4.13 — plan an upgrade.**
 
-## Target
+## Asset
 
 | Field | Value |
 |---|---|
 | Hostname | fw-maniak-hq |
 | Model | FortiGate 80F (FGT80F) |
+| FortiOS | v7.4.11 build 2878 |
 | Serial | FGT80FTK22061709 |
-| FortiOS | **v7.4.11 build 2878** |
 | VDOM | root |
-| Health at check time | CPU ~100% idle, mem 1.52 GB / 3.90 GB — no performance pressure |
+| Report date | 2026-11-23 (America/Toronto) |
+| Window scanned | 2026-10-24 → 2026-11-23 (last 30 days) |
 
-## Feeds checked (this session)
+Managed FortiAPs: no FortiAP firmware version was supplied in this run's context, and **neither feed contained a single FortiAP advisory** in the window (or anywhere in the fetched feed), so no FortiAP item is reported. FortiProxy SSL-VPN likewise had zero items.
 
-| Feed | URL | Status | Items |
-|---|---|---|---|
-| PSIRT IR Advisories | https://filestore.fortinet.com/fortiguard/rss/ir.xml | OK (50,949 B) | 50 items, all within window |
-| Outbreak Alerts | https://filestore.fortinet.com/fortiguard/rss/outbreakalert.xml (page: https://fortiguard.fortinet.com/outbreak-alert) | OK (18,079 B) | 20 items, 3 within window |
+## Feeds fetched this session (both reachable)
 
-Window: **2026-10-23 → 2026-11-22** (last 30 days). Both feeds reachable; neither was unreachable.
-Per-advisory CVE ids and affected-version ranges were taken from the matching CSAF JSON on filestore.fortinet.com (`/fortiguard/psirt/csaf_*_fg-ir-*.json`) — not inferred.
+| Feed | URL | Items |
+|---|---|---|
+| PSIRT IR Advisories | https://filestore.fortinet.com/fortiguard/rss/ir.xml | 50 |
+| Outbreak Alerts | https://filestore.fortinet.com/fortiguard/rss/outbreak-alert.xml | 20 |
+| CSAF detail JSON (per advisory) | https://filestore.fortinet.com/fortiguard/psirt/csaf_*.json | 50/50 retrieved |
 
-## FortiOS / FortiGate / FortiAP items in the last 30 days
+All 50 PSIRT items fell inside the 30-day window (feed covers 2026-10-26 → 2026-11-20). The RSS `<description>` text names the product but **does not** state affected version ranges, so each advisory's CSAF JSON was fetched and its `product_status.known_affected` / `known_not_affected` ranges were used to answer the "affects 7.4.11?" column. No row below is asserted without a fetched feed.
 
-All published Tue, 10 Nov 2026. "Affects 7.4.11?" is decided against the CSAF `known_affected` range vs. the running v7.4.11.
+## FortiOS / FortiGate items in window — affects 7.4.11?
 
-| Date | Advisory | CVE | Product | Affected FortiOS range (CSAF) | Affects 7.4.11? | CVSS v3 | Link |
-|---|---|---|---|---|---|---|---|
-| 2026-11-10 (rev. 11-16) | FG-IR-26-273 — Unauthenticated adjacent command execution via HA (CWE-306) | CVE-2026-126259 | FortiOS | >=7.4.0 – <=7.4.12 | **yes** | 9.0 CRITICAL | https://fortiguard.fortinet.com/psirt/FG-IR-26-273 |
-| 2026-11-10 (rev. 11-13) | FG-IR-26-268 — Numeric truncation error in bgp daemon (CWE-197) | CVE-2026-126254 | FortiOS, FortiSASE | >=7.4.0 – <=7.4.12 | **yes** | 9.6 CRITICAL | https://fortiguard.fortinet.com/psirt/FG-IR-26-268 |
-| 2026-11-10 | FG-IR-26-267 — Authentication bypass by primary weakness in ospf daemon (CWE-305) | CVE-2026-126253 | FortiOS, FortiSASE | >=7.4.0 – <=7.4.12 | **yes** | 9.3 CRITICAL | https://fortiguard.fortinet.com/psirt/FG-IR-26-267 |
-| 2026-11-10 (rev. 11-12) | FG-IR-26-269 — Path traversal in ssh daemon (CWE-24) | CVE-2026-126255 | FortiOS, FortiSASE, FortiPAM | >=7.4.0 – <=7.4.12 | **yes** | 7.4 HIGH | https://fortiguard.fortinet.com/psirt/FG-IR-26-269 |
-| 2026-11-10 (rev. 11-12) | FG-IR-26-193 — SSLVPN improper certificate validation (CWE-295) | CVE-2026-121528 | FortiOS SSLVPN | >=7.4.0 – <=7.4.9 (fixed in 7.4.10) | **no** | 7.7 HIGH | https://fortiguard.fortinet.com/psirt/FG-IR-26-193 |
-| 2026-11-10 | FG-IR-26-195 — Broken access control in admin RADIUS TFA (CWE-287) | CVE-2026-121530 | FortiOS | only >=7.6.0 – <=7.6.6; CSAF lists "FortiOS 7.4 all versions" as **known_not_affected** | **no** | 5.9 MEDIUM | https://fortiguard.fortinet.com/psirt/FG-IR-26-195 |
-| 2026-11-10 | FG-IR-26-225 — Template-engine injection → super admin on managed FortiGates (CWE-1336) | CVE-2026-126180 | FortiManager, FortiManager Cloud (**FortiOS not in `known_affected`**) | n/a for FortiOS; FortiManager >=7.4.0 – <=7.4.11 | **no** (FortiGate itself is the *target*, not the vulnerable product) | 8.4 HIGH | https://fortiguard.fortinet.com/psirt/FG-IR-26-225 |
+| Date | Advisory | CVE | Product | Affects 7.4.11? | Link |
+|---|---|---|---|---|---|
+| 2026-11-10 | FG-IR-26-268 — Numeric truncation error (BGP daemon), CVSS 9.6 CRITICAL | CVE-2026-126254 | FortiOS, FortiSASE | **YES** — `FortiOS >=7.4.0\|<=7.4.12`; fixed 7.4.13 | https://fortiguard.fortinet.com/psirt/FG-IR-26-268 |
+| 2026-11-10 | FG-IR-26-267 — Authentication bypass by primary weakness (OSPF daemon), CVSS 9.3 CRITICAL | CVE-2026-126253 | FortiOS, FortiSASE | **YES** — `FortiOS >=7.4.0\|<=7.4.12`; fixed 7.4.13 | https://fortiguard.fortinet.com/psirt/FG-IR-26-267 |
+| 2026-11-10 | FG-IR-26-273 — Unauthenticated adjacent command execution via HA, CVSS 9.0 CRITICAL | CVE-2026-126259 | FortiOS | **YES** — `FortiOS >=7.4.0\|<=7.4.12`; fixed 7.4.13 | https://fortiguard.fortinet.com/psirt/FG-IR-26-273 |
+| 2026-11-10 | FG-IR-26-269 — Improper neutralization in sshd (path traversal, auth bypass), CVSS 7.4 HIGH | CVE-2026-126255 | FortiOS, FortiPAM, FortiSASE | **YES** — `FortiOS >=7.4.0\|<=7.4.12`; fixed 7.4.13 | https://fortiguard.fortinet.com/psirt/FG-IR-26-269 |
+| 2026-11-10 | FG-IR-26-193 — SSLVPN improper certificate validation (MiTM), CVSS 7.7 HIGH | CVE-2026-121528 | FortiOS SSL-VPN | **NO** — affected `FortiOS >=7.4.0\|<=7.4.9`, fixed in 7.4.10; our 7.4.11 is already past the ceiling | https://fortiguard.fortinet.com/psirt/FG-IR-26-193 |
+| 2026-11-10 | FG-IR-26-195 — Broken access control in RADIUS admin TFA, CVSS 5.9 MEDIUM | CVE-2026-121530 | FortiOS | **NO** — affected only `FortiOS >=7.6.0\|<=7.6.6`; CSAF lists "FortiOS/ 7.4 all versions" as not affected | https://fortiguard.fortinet.com/psirt/FG-IR-26-195 |
+| 2026-11-10 | FG-IR-26-225 — Template-engine injection → low-privileged Device Manager admin obtains super-admin on **managed FortiGates**, CVSS 8.4 HIGH | CVE-2026-126180 | FortiManager / FortiManager Cloud | **CHECK advisory** — vulnerable product is FortiManager (`>=7.4.0\|<=7.4.11`, fixed 7.4.12), not FortiOS; fw-maniak-hq is exposed only if it is centrally managed by a FortiManager | https://fortiguard.fortinet.com/psirt/FG-IR-26-225 |
 
-**No FortiAP or FortiProxy SSL-VPN advisories appeared in either feed in this window** — grep for "FortiAP" and "FortiProxy" returned 0 hits across both feeds fetched today, so any managed FortiAPs (FortiAP firmware, e.g. FP231F v7.4.x) have no new PSIRT action from this check. No FortiOS version field for the APs was collected by this read-only toolset; re-check if AP firmware is in scope.
+### Exploitation caveats worth reading before you panic
 
-## Outbreak Alerts in the last 30 days
+The four "YES" rows all name FortiOS, but the feed descriptions carry prerequisites that narrow real exposure on this box — worth checking against config rather than assuming worst case:
 
-No Outbreak Alert in the window concerns Fortinet products. None mention FortiOS, FortiGate, FortiAP or FortiProxy.
+- **FG-IR-26-268** requires "a configured ibgp neighbor" to send malformed attributes. If fw-maniak-hq runs no BGP/ibgp peering, reachability of this flaw is low.
+- **FG-IR-26-267** is in the OSPF daemon (unauthenticated attacker "may broadcast LSA"). Relevant only where OSPF is enabled.
+- **FG-IR-26-273** is adjacent-network and needs "HA FGSP + standalone-config-sync, or autoscale" to execute commands as super admin via crafted HA packets. A standalone unit with no FGSP peer is largely out of scope — **verify HA/FGSP status before treating this as live**.
+- **FG-IR-26-269** is in the FortiOS SSH daemon and lets an unauthenticated attacker bypass authentication with specially crafted credentials — this one has no configuration precondition, so it is the most broadly reachable of the four if administrative SSH is exposed.
+
+Regardless of which prerequisites apply, the single remediation that clears all four is **FortiOS 7.4.13**.
+
+## Other Fortinet products in window (not this FortiGate — informational)
+
+45 of the 50 advisories target products other than FortiOS. They do not affect fw-maniak-hq, but they matter if these products sit anywhere in the estate:
+
+| Product group | Count | Notes |
+|---|---|---|
+| FortiManager / FortiAnalyzer (+ Cloud, + BigData, + SASE-Sovereign) | 22 | Largest cluster; several auth/authz bypass and code-injection issues at CVSS 8.2–9.1 (e.g. FG-IR-26-244, FG-IR-26-235, FG-IR-26-228, FG-IR-26-232). FG-IR-26-275 (FGFM elevation before registration password verified, CVSS 9.0) is the one to note if any FortiGate is FGFM-managed. |
+| FortiMail (+ FortiRecorder, FortiVoice) | 12 | FG-IR-26-199 path traversal CVSS 9.8, FG-IR-26-216 SQL injection CVSS 9.4, FG-IR-26-208 authz bypass CVSS 9.1 — all unauthenticated. |
+| FortiAuthenticator | 5 | FG-IR-26-271 hard-coded password CVSS 9.0; FG-IR-26-255 LDAP injection CVSS 8.2. |
+| FortiOS-adjacent (see table above) | 6 | The FortiOS/FortiGate rows. |
+| Third-party component advisories (empty CSAF product tree) | 4 | See below. |
+
+### Third-party component advisories — "check advisory"
+
+Four advisories carry **no explicit Fortinet product list** (CSAF product tree is empty) and instead describe an upstream open-source component. Whether fw-maniak-hq is exposed depends on whether FortiOS bundles the affected component, which these feeds do not state:
+
+| Date | Advisory | Component / CVEs | Affects 7.4.11? | Link |
+|---|---|---|---|---|
+| 2026-11-20 | FG-IR-26-279 — NGINX vulnerabilities, CVSS 8.1 | NGINX OSS; CVE-2026-113425, -118899, -120967, -120993, -121810, -123007, -123633, -123634, -123640, -125283 | **check advisory** | https://fortiguard.fortinet.com/psirt/FG-IR-26-279 |
+| 2026-11-18 | FG-IR-26-278 — Java4Shell, CVSS 8.1 | Oracle Java SE / GraalVM; CVE-2026-114938 | **check advisory** | https://fortiguard.fortinet.com/psirt/FG-IR-26-278 |
+| 2026-11-02 | FG-IR-26-188 — Linux kernel RCE, CVSS 9.8 | Linux kernel IPv4 (tcp_v4_syn_recv_sock / inet_opt RCU); CVE-2026-98432 | **check advisory** | https://fortiguard.fortinet.com/psirt/FG-IR-26-188 |
+| 2026-10-26 | FG-IR-26-187 — Node2Shell CVEs, CVSS 9.8 | Node.js 22.x/24.x/26.x + Brotli decoder; CVE-2026-105481, -105482, -105483, -106069, -106070, -106071, -106072, -106073, -106074, -111497 | **check advisory** | https://fortiguard.fortinet.com/psirt/FG-IR-26-187 |
+
+## Outbreak Alerts in window
+
+The Outbreak Alert feed was fetched and scanned in full. **No Outbreak Alert names FortiOS, FortiGate, FortiAP or FortiProxy** — the only "Forti" string in the entire feed is "FortiGuard Labs" (12 occurrences). So there is **no Fortinet-product outbreak alert to act on**. The three alerts inside the 30-day window, listed for completeness:
 
 | Date | Alert | CVE | Product | Affects 7.4.11? | Link |
 |---|---|---|---|---|---|
-| 2026-11-19 | PHP2Shell Remote Code Execution Vulnerabilities | none stated | PHP application servers | no (not a Fortinet product) | https://fortiguard.fortinet.com/outbreak-alert/php2shell |
-| 2026-11-18 | Refrigeration Control Systems Attack | none stated | Danfoss / Copeland / Dixell refrigeration controllers | no | https://fortiguard.fortinet.com/outbreak-alert/refrigeration-control-systems-attack |
-| 2026-10-27 | Node2Shell Remote Code Execution | CVE-2026-111497 | Node.js / Google Brotli decoder | no | https://fortiguard.fortinet.com/outbreak-alert/node2shell |
+| 2026-11-19 | PHP2Shell Remote Code Execution Vulnerabilities | not stated in feed | PHP runtimes (FortiGuard monitoring) | **NO** (no Fortinet product implicated) | https://fortiguard.fortinet.com/outbreak-alert/php2shell |
+| 2026-11-18 | Refrigeration Control Systems Attack | not stated in feed | Danfoss AK-SM/AK-SC, Copeland XWEB, Dixell XWEB | **NO** (no Fortinet product implicated) | https://fortiguard.fortinet.com/outbreak-alert/refrigeration-control-systems-attack |
+| 2026-10-27 | Node2Shell Remote Code Execution | CVE-2026-111497 | Node.js / Google Brotli decoder | **NO** (no Fortinet product implicated) | https://fortiguard.fortinet.com/outbreak-alert/node2shell |
 
-## Third-party PSIRT items in the window (no FortiOS/FortiGate/FortiAP impact stated)
+No Fortinet-product SSL-VPN outbreak campaign is active against this class of device in the window — the only SSL-VPN item is the PSIRT advisory FG-IR-26-193, which does not affect 7.4.11.
 
-Listed for completeness. These four do **not** name FortiOS/FortiGate/FortiAP/FortiProxy in the feed text, and their CSAF `product_tree` lists **no Fortinet product** — so no FortiGate action is required. Kept as *check advisory* only because the feed text does not affirmatively scope them.
+## Recommended actions (this box)
 
-| Date | Advisory | Product | Affects 7.4.11? | Link |
-|---|---|---|---|---|
-| 2026-11-20 | FG-IR-26-279 — NGINX vulnerabilities (10 CVEs, e.g. CVE-2026-123007, CVE-2026-113425) | NGINX OSS — feed explicitly states "None of Fortinet products use NGINX Plus" | no | https://fortiguard.fortinet.com/psirt/FG-IR-26-279 |
-| 2026-11-18 | FG-IR-26-278 — Java4Shell (CVE-2026-114938) | Oracle Java SE / GraalVM — Fortinet product impact not stated in feed | check advisory | https://fortiguard.fortinet.com/psirt/FG-IR-26-278 |
-| 2026-11-02 | FG-IR-26-188 — Linux kernel RCE (CVE-2026-98432) | Linux kernel (ipv4 TCP) — Fortinet product impact not stated in feed | check advisory | https://fortiguard.fortinet.com/psirt/FG-IR-26-188 |
-| 2026-10-26 | FG-IR-26-187 — Node2Shell CVEs (CVE-2026-105482/105483/106069/111497/…) | Node.js — Fortinet product impact not stated in feed | check advisory | https://fortiguard.fortinet.com/psirt/FG-IR-26-187 |
+1. **Schedule the FortiOS 7.4.11 → 7.4.13 upgrade** — it is the single fixed release that clears FG-IR-26-267, -268, -269 and -273, including all three CRITICAL items.
+2. Until patched, confirm the mitigating prerequisites actually apply here: BGP/ibgp peers (268), OSPF adjacency (267), HA FGSP / standalone-config-sync / autoscale (273). If none are configured, live exposure is materially narrower than the CVSS scores suggest.
+3. Restrict administrative SSH (269) to trusted management subnets — it is the only one of the four with no configuration precondition.
+4. If any FortiManager manages this FortiGate, track FG-IR-26-225 and FG-IR-26-275 on the FortiManager side (fixed 7.4.12 / 7.4.6 respectively), since both can yield super-admin on managed FortiGates.
+5. Re-run this check against the FortiAP estate once a FortiAP firmware version is provided — nothing was reportable this run because the feeds contain no FortiAP items.
 
-Note: FG-IR-26-275 (FGFM elevation before registration password is verified, CVSS 9.0) names **FortiManager FGFM** only — FortiOS is not in its affected list — so it is not an exposure for this FortiGate unless a FortiManager manages it: https://fortiguard.fortinet.com/psirt/FG-IR-26-275
+## Provenance
 
-## Recommended actions (FortiGate-side; read-only check — nothing was changed)
-
-1. **Plan a maintenance window to upgrade fw-maniak-hq from FortiOS 7.4.11 to 7.4.13** — this is the single fixed release that clears all four affected advisories (FG-IR-26-273, FG-IR-26-268, FG-IR-26-267, FG-IR-26-269). FortiOS 7.4.13 is listed as `known_not_affected` in each CSAF.
-2. **Priority justification:** FG-IR-26-268 (bgpd, CVSS 9.6) carries exploit code "F" in its vector and FG-IR-26-267 (ospfd, CVSS 9.3) carries exploit PoC "P" — both are the highest-risk items. FG-IR-26-273 (CVSS 9.0, super-admin command execution) is only HA-segment **adjacent**, so risk depends on trust of the HA/FGSP L2 segment.
-3. **Interim mitigations until patched** (from the advisory text itself):
-   - FG-IR-26-273: on fixed versions set `config system ha` → `set password`, `set encryption enable`, `set authentication enable`; for standalone-config-sync also set `config system standalone-cluster` `psksecret`; for autoscale set `config system autoscale` `psksecret`. **Virtual patch FG-VD-61445.0day is available in FMWP db update 26.082** — enabling IPS/inline-web-proxy virtual patching is the fastest compensating control if 80F licensing allows.
-   - FG-IR-26-268 / FG-IR-26-267: restrict who can peer as a configured iBGP neighbour and restrict OSPF to trusted interfaces/areas; ensure BGP/OSPF neighbour authentication is configured.
-   - FG-IR-26-269: restrict administrative SSH access (SSH listen-on ranges, admin profiles, out-of-band mgmt VDOM) since it is an unauthenticated sshd path-traversal.
-4. **No action** for FG-IR-26-193 (fixed in 7.4.10, we are on 7.4.11) or FG-IR-26-195 (FortiOS 7.4 all versions explicitly not affected).
-5. **If a FortiManager manages this FortiGate:** check the FortiManager version — FG-IR-26-225 affects FortiManager >=7.4.0 – <=7.4.11 and lets a low-privileged Device Manager admin gain super admin on *managed FortiGates*; upgrade FortiManager to 7.4.12+.
-6. No Outbreak Alert in this window requires FortiGate-side changes.
-
----
-*Generated 2026-11-22 (America/Toronto) by fortigate_cve_watch — read-only. Every row above comes from `ir.xml` / `outbreakalert.xml` fetched in this session plus the referenced CSAF JSON files; no advisory or CVE id was invented.*
+Every advisory ID, CVE ID, CVSS score, product name, version range and link above was taken from `ir.xml`, `outbreakalert.xml`, and the 50 per-advisory CSAF JSON documents fetched live in this session. Nothing was recalled from memory. Both feeds responded successfully — no feed was unreachable. This run was strictly read-only: only `fg_system_status` was called against fw-maniak-hq, and no firewall configuration was read or changed.
