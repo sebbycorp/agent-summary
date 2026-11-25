@@ -55,7 +55,7 @@ manages this device — FG-IR-26-225 explicitly yields super-admin on **managed 
 
 | Date | Advisory | CVE | Product | Affects 7.4.11? | Link |
 |---|---|---|---|---|---|
-| 2026-11-10 | FG-IR-26-247 — Improper certificate validation in RADIUS | — | FortiSASE Sovereign, FortiManager, FortiAnalyzer (+Cloud) | **NO** — FortiOS not in product list | https://fortiguard.fortinet.com/psirt/FG-IR-26-247 |
+| 2026-11-10 | FG-IR-26-247 — Improper certificate validation in RADIUS (CVSS 7.5) | CVE-2026-126232 | FortiSASE Sovereign, FortiManager, FortiAnalyzer (+Cloud) | **NO** — FortiOS not in CSAF product list | https://fortiguard.fortinet.com/psirt/FG-IR-26-247 |
 | 2026-11-02 | FG-IR-26-188 — Linux kernel RCE (tcp_v4_syn_recv_sock) | CVE-2026-98432 | upstream Linux kernel; CSAF `product_tree` is **empty** (no Fortinet product enumerated) | **check advisory** — no FortiOS product listed, so not attributable to 7.4.11 from the feed | https://fortiguard.fortinet.com/psirt/FG-IR-26-188 |
 | 2026-10-26 | FG-IR-26-187 — "Node2Shell" Node.js CVEs | CVE-2026-105481, -105482, -105483, -106069, -106070, -106071, -106072, -106073, -106074, -111497 | Node.js / Brotli; CSAF `product_tree` empty | **NO** — third-party runtime, no Fortinet product listed | https://fortiguard.fortinet.com/psirt/FG-IR-26-187 |
 | 2026-11-20 | FG-IR-26-279 — NGINX vulnerabilities | CVE-2026-113425, -118899, -120967, -120993, -121810, -123007, -123633, -123634, -123640, -125283 | NGINX OSS; CSAF `product_tree` empty | **NO** — third-party component, no Fortinet product listed | https://fortiguard.fortinet.com/psirt/FG-IR-26-279 |
