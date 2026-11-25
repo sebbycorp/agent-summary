@@ -12,28 +12,28 @@ morning by the `agent-summary-digest` agent.
 
 - **fortiguard-cve** - FG-IR-26-268 / CVE-2026-126254 (bgpd, 9.6), FG-IR-26-267 / CVE-2026-126253 (ospfd auth bypass, 9.3), FG-IR-26-273 / CVE-2026-126259 (HA/FGSP exec, 9.0), FG-IR-26-269 / CVE-2026-126255 (sshd traversal, 7.4) all list FortiOS <=7.4.12 — we run v7.4.11. **7.4.13** clears them. [Details](reports/fortiguard-cve/latest.md)
 - **k8s-cve** - patch first: Argo CD v3.5.3 → **v3.5.4** (CVE-2026-77459 CRITICAL AppProject bypass, CVE-2026-55797 command injection), CoreDNS v1.12.3 → **1.14.7+** (10 HIGH), Flannel v0.27.2 → **>= v0.28.2** (CVE-2026-32241 cross-node RCE). [Details](reports/k8s-cve/latest.md)
-- **kagent-updates** - pin **kagent-tools 0.3.2** (fixes CVE-2026-111943/-116587/-116591 in the `tools` image); omni-viper runs `tools:0.3.1`. kagent **v0.10.7** raises mcp to 1.30.0 (CVE-2026-115563). [Details](reports/kagent-updates/latest.md)
-- **kagent-updates** - substrate [#192](https://github.com/kagent-dev/substrate/pull/192) still `blocked`: atelet hard-codes `api.ate-system.svc`, so the non-`ate-system` installer bug is live on omni-viper. [Details](reports/kagent-updates/latest.md)
+- **kagent-updates** - pin **kagent-tools 0.3.2** (fixes CVE-2026-111943/-116587/-116591 in the `tools` image); omni-viper runs `tools:0.3.1`. kagent **v0.10.7** also raises mcp to 1.30.0 (CVE-2026-115563). [Details](reports/kagent-updates/latest.md)
+- **kagent-updates** - substrate [#192](https://github.com/kagent-dev/substrate/pull/192) still `blocked`: atelet hard-codes `api.ate-system.svc`, so the non-`ate-system` installer bug stays live on omni-viper. [Details](reports/kagent-updates/latest.md)
 
 ### Worth knowing
 
-- **agentdesktop-updates** - **v0.7.0** shipped and breaks demos: gateway JWKS moves to its own `gatewayListener` on `127.0.0.1:8444` (tls) — repoint every agentgateway JWKS URL (#240) or token validation silently stops. Controller is loopback-only (#220), `caCertificatePath` required (#234). [Details](reports/agentdesktop-updates/latest.md)
-- **agentgateway-updates** - 45 PRs, no v1.8 tag (stable v1.7.0). ReferenceGrants enforced on `AgentgatewayBackend` refs (#4536, soft breaking; audit multi-ns manifests); dynamic backends can't dial loopback (#4528). [Details](reports/agentgateway-updates/latest.md)
+- **agentdesktop-updates** - **v0.7.0** shipped and breaks demos: gateway JWKS moves to its own `gatewayListener` on `127.0.0.1:8444` (tls) — repoint agentgateway JWKS URLs (#240) or token validation silently stops. Controller is loopback-only (#220), `caCertificatePath` required (#234). [Details](reports/agentdesktop-updates/latest.md)
+- **agentgateway-updates** - 45 PRs, no v1.8 tag (stable v1.7.0). ReferenceGrants enforced on `AgentgatewayBackend` refs (#4536, soft breaking — audit multi-ns manifests); dynamic backends can't dial loopback (#4528). [Details](reports/agentgateway-updates/latest.md)
 - **kagent-updates** - breaking UI renames on `main`: `/mcp` → `/mcp-servers` (#3778), chat/session → "conversation" (#3776). Enterprise alpha12 pairs with substrate **v1.0.1**, not `v1.1.0-alpha1`. [Details](reports/kagent-updates/latest.md)
-- **fortiguard-cve** - patch any managing FortiManager: FG-IR-26-225 / CVE-2026-126180 (8.4) yields super-admin on managed FortiGates (7.4.0–7.4.11). No Outbreak Alert in 30 days concerns Fortinet. [Details](reports/fortiguard-cve/latest.md)
-- **k8s-cve** - cert-manager v1.21.2 and OTel Collector 0.163.2/0.161.0 clean; 18 private images need trivy/grype; kube-proxy v1.34.11 vs control plane v1.36.4 is a 2-minor skew. [Details](reports/k8s-cve/latest.md)
+- **fortiguard-cve** - patch any managing FortiManager: FG-IR-26-225 / CVE-2026-126180 (8.4) yields super-admin on managed FortiGates (FortiManager 7.4.0–7.4.11). No Outbreak Alert this month concerns Fortinet. [Details](reports/fortiguard-cve/latest.md)
+- **k8s-cve** - cert-manager v1.21.2 and OTel Collector clean; 18 private images need trivy/grype; kube-proxy v1.34.11 vs v1.36.4 is a 2-minor skew. [Details](reports/k8s-cve/latest.md)
 
 ### Report status
 
 | Report | Status | Verdict | Today | History |
 | --- | --- | --- | --- | --- |
 | [redteam-posture](reports/redteam-posture/latest.md) | MISSING | - | - | - |
-| [agentgateway-updates](reports/agentgateway-updates/latest.md) | WATCH | 45 PRs, no v1.8 tag: loopback rejection, ReferenceGrant enforcement, MCP session rebuild. | [2026-11-25](reports/agentgateway-updates/2026/2026-11-25.md) | [all](reports/agentgateway-updates/) |
-| [kagent-updates](reports/kagent-updates/latest.md) | ACTION | Three releases (kagent v0.10.7, tools v0.3.2, substrate v1.1.0-alpha1); UI renames; #192 blocked. | [2026-11-25](reports/kagent-updates/2026/2026-11-25.md) | [all](reports/kagent-updates/) |
-| [agentdesktop-updates](reports/agentdesktop-updates/latest.md) | WATCH | v0.7.0: JWKS on its own listener, loopback-only controller auth, enrollment tokens, Rosetta-free PKG. | [2026-11-25](reports/agentdesktop-updates/2026/2026-11-25.md) | [all](reports/agentdesktop-updates/) |
-| [fortigate-health](reports/fortigate-health/latest.md) | OK | HEALTHY — all resource counters well under 80%; nothing to flag. | [2026-11-25](reports/fortigate-health/2026/2026-11-25.md) | [all](reports/fortigate-health/) |
-| [k8s-cve](reports/k8s-cve/latest.md) | ACTION | CoreDNS 1.12.3 (10 HIGH), Flannel 0.27.2 (cross-node RCE), Argo CD v3.5.3 (1 CRITICAL + 1 HIGH). | [2026-11-25](reports/k8s-cve/2026/2026-11-25.md) | [all](reports/k8s-cve/) |
-| [fortiguard-cve](reports/fortiguard-cve/latest.md) | ACTION | Four FortiOS advisories affect the running v7.4.11; three CRITICAL; fix is FortiOS 7.4.13. | [2026-11-25](reports/fortiguard-cve/2026/2026-11-25.md) | [all](reports/fortiguard-cve/) |
+| [agentgateway-updates](reports/agentgateway-updates/latest.md) | WATCH | 45 PRs, no v1.8 tag: loopback rejection, ReferenceGrant enforcement. | [2026-11-25](reports/agentgateway-updates/2026/2026-11-25.md) | [all](reports/agentgateway-updates/) |
+| [kagent-updates](reports/kagent-updates/latest.md) | ACTION | Three releases (kagent v0.10.7, tools v0.3.2, substrate v1.1.0-alpha1); #192 blocked. | [2026-11-25](reports/kagent-updates/2026/2026-11-25.md) | [all](reports/kagent-updates/) |
+| [agentdesktop-updates](reports/agentdesktop-updates/latest.md) | WATCH | v0.7.0: JWKS on its own listener, loopback-only controller auth, enrollment tokens. | [2026-11-25](reports/agentdesktop-updates/2026/2026-11-25.md) | [all](reports/agentdesktop-updates/) |
+| [fortigate-health](reports/fortigate-health/latest.md) | OK | HEALTHY — all counters well under 80%; nothing to flag. | [2026-11-25](reports/fortigate-health/2026/2026-11-25.md) | [all](reports/fortigate-health/) |
+| [k8s-cve](reports/k8s-cve/latest.md) | ACTION | CoreDNS 1.12.3 (10 HIGH), Flannel 0.27.2 (RCE), Argo CD v3.5.3 (1 CRITICAL + 1 HIGH). | [2026-11-25](reports/k8s-cve/2026/2026-11-25.md) | [all](reports/k8s-cve/) |
+| [fortiguard-cve](reports/fortiguard-cve/latest.md) | ACTION | Four advisories hit the running v7.4.11; three CRITICAL; fix is 7.4.13. | [2026-11-25](reports/fortiguard-cve/2026/2026-11-25.md) | [all](reports/fortiguard-cve/) |
 
 Audit: [reports/_status/latest.md](reports/_status/latest.md) - Past digests: [reports/_digest/](reports/_digest/)
 
