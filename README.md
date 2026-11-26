@@ -4,36 +4,33 @@ Daily findings from [kagent](https://kagent.dev) agents running on **Agent Subst
 Every report below is written and committed by an agent from its sandbox; this page is rewritten each
 morning by the `agent-summary-digest` agent.
 
-## Today's highlights - 2026-11-25
+## Today's highlights - 2026-11-26
 
-**Bottom line:** 6 of 7 reports arrived (redteam-posture absent a 6th straight day) and 3 need action — top item: three CRITICAL FortiOS advisories (CVSS 9.0–9.6) hit the running v7.4.11 on fw-maniak-hq, all cleared by FortiOS 7.4.13.
+**Bottom line:** 5 of 7 scheduled reports arrived and 2 did not (redteam-posture absent for a 7th straight day, k8s-cve stale from 2026-11-25); 1 report needs action today — upgrade fw-maniak-hq to FortiOS 7.4.13 to close four advisories, three of them CVSS 9.0+.
 
 ### Action needed
-
-- **fortiguard-cve** - FG-IR-26-268 / CVE-2026-126254 (bgpd, 9.6), FG-IR-26-267 / CVE-2026-126253 (ospfd auth bypass, 9.3), FG-IR-26-273 / CVE-2026-126259 (HA/FGSP exec, 9.0), FG-IR-26-269 / CVE-2026-126255 (sshd traversal, 7.4) all list FortiOS <=7.4.12 — we run v7.4.11. **7.4.13** clears them. [Details](reports/fortiguard-cve/latest.md)
-- **k8s-cve** - patch first: Argo CD v3.5.3 → **v3.5.4** (CVE-2026-77459 CRITICAL AppProject bypass, CVE-2026-55797 command injection), CoreDNS v1.12.3 → **1.14.7+** (10 HIGH), Flannel v0.27.2 → **>= v0.28.2** (CVE-2026-32241 cross-node RCE). [Details](reports/k8s-cve/latest.md)
-- **kagent-updates** - pin **kagent-tools 0.3.2** (fixes CVE-2026-111943/-116587/-116591 in the `tools` image); omni-viper runs `tools:0.3.1`. kagent **v0.10.7** also raises mcp to 1.30.0 (CVE-2026-115563). [Details](reports/kagent-updates/latest.md)
-- **kagent-updates** - substrate [#192](https://github.com/kagent-dev/substrate/pull/192) still `blocked`: atelet hard-codes `api.ate-system.svc`, so the non-`ate-system` installer bug stays live on omni-viper. [Details](reports/kagent-updates/latest.md)
+- **fortiguard-cve** - 4 of the 7 FortiOS/FortiGate advisories from the last 30 days affect the running FortiOS **v7.4.11 build 2878**: FG-IR-26-268 / CVE-2026-126254 (BGP, CVSS 9.6), FG-IR-26-267 / CVE-2026-126253 (OSPF auth bypass, 9.3), FG-IR-26-273 / CVE-2026-126259 (HA/FGSP, 9.0) and FG-IR-26-269 / CVE-2026-126255 (SSH path traversal, 7.4). One fix closes all four: **FortiOS 7.4.13**; until then restrict BGP/OSPF peers, isolate HA/FGSP links and restrict admin SSH. [Details](reports/fortiguard-cve/latest.md)
+- **k8s-cve** (report is stale — last run 2026-11-25, today's 09:15 run never published) - still-unpatched items from that run: **Argo CD v3.5.3 → v3.5.4** for CRITICAL CVE-2026-77459 (AppProject restriction bypass) + HIGH CVE-2026-55797; **CoreDNS v1.12.3 → v1.14.7+** for 10 HIGH advisories; **Flannel v0.27.2 → ≥ v0.28.2** for HIGH CVE-2026-32241 cross-node RCE. Re-run the schedule to confirm none of these was already fixed. [Details](reports/k8s-cve/latest.md)
+- **redteam-posture** - no `reports/redteam-posture/` directory exists at all (no `latest.md`, no `2026/2026-11-26.md`) — seventh consecutive day absent; check the schedule's execution history in the kagent UI (agent `redteam-posture`, due 07:00) and re-run. [Audit](reports/_status/latest.md)
 
 ### Worth knowing
-
-- **agentdesktop-updates** - **v0.7.0** shipped and breaks demos: gateway JWKS moves to its own `gatewayListener` on `127.0.0.1:8444` (tls) — repoint agentgateway JWKS URLs (#240) or token validation silently stops. Controller is loopback-only (#220), `caCertificatePath` required (#234). [Details](reports/agentdesktop-updates/latest.md)
-- **agentgateway-updates** - 45 PRs, no v1.8 tag (stable v1.7.0). ReferenceGrants enforced on `AgentgatewayBackend` refs (#4536, soft breaking — audit multi-ns manifests); dynamic backends can't dial loopback (#4528). [Details](reports/agentgateway-updates/latest.md)
-- **kagent-updates** - breaking UI renames on `main`: `/mcp` → `/mcp-servers` (#3778), chat/session → "conversation" (#3776). Enterprise alpha12 pairs with substrate **v1.0.1**, not `v1.1.0-alpha1`. [Details](reports/kagent-updates/latest.md)
-- **fortiguard-cve** - patch any managing FortiManager: FG-IR-26-225 / CVE-2026-126180 (8.4) yields super-admin on managed FortiGates (FortiManager 7.4.0–7.4.11). No Outbreak Alert this month concerns Fortinet. [Details](reports/fortiguard-cve/latest.md)
-- **k8s-cve** - cert-manager v1.21.2 and OTel Collector clean; 18 private images need trivy/grype; kube-proxy v1.34.11 vs v1.36.4 is a 2-minor skew. [Details](reports/k8s-cve/latest.md)
+- **kagent-updates** - substrate [#192](https://github.com/kagent-dev/substrate/pull/192) is still `blocked`, so the non-`ate-system` installer bug remains live: do not rename the substrate release/namespace on omni-viper, or atelet falls back to `api.ate-system.svc` and workers never register. New MCP-tasks demo post ([#763](https://github.com/kagent-dev/website/pull/763)) and the `curl -sL https://kagent.dev/install | bash` one-liner ([#764](https://github.com/kagent-dev/website/pull/764)) are usable as-is. [Details](reports/kagent-updates/latest.md)
+- **agentdesktop-updates** - nothing to upgrade (v0.7.0 / chart 0.7.0 unchanged), but token-enrolled fleets still cannot get `GetLlmGatewayCredential` until [#287](https://github.com/agentdesktop-dev/agentdesktop/pull/287) merges — keep demos on OIDC enrollment; draft [#299](https://github.com/agentdesktop-dev/agentdesktop/pull/299) fixes Copilot CLI / Claude Code version discovery and the relative-socket credential-helper failure. [Details](reports/agentdesktop-updates/latest.md)
+- **agentgateway-updates** - zero merged PRs and zero commits to `main` (HEAD still `134cbf02`, no release since v1.7.0 on Oct 27); 9 new PRs opened, and the auth-hardening pair [#4545](https://github.com/agentgateway/agentgateway/pull/4545) / [#4394](https://github.com/agentgateway/agentgateway/pull/4394) will change IdP-outage fail-open/fail-closed behaviour — re-run the JWT demo when either lands. [Details](reports/agentgateway-updates/latest.md)
+- **agentgateway-updates** - [#4570](https://github.com/agentgateway/agentgateway/pull/4570) is open and `blocked`: Vertex `.../embedContent` calls through the model router pick up `embedContent` as the model name, so Vertex embeddings still need a per-backend routes override in the demo config. [Details](reports/agentgateway-updates/latest.md)
+- **agentgateway-updates** - [#4568](https://github.com/agentgateway/agentgateway/pull/4568) moves telemetry shutdown after drain (fixes #4452) and [#4561](https://github.com/agentgateway/agentgateway/pull/4561) adds `BackendTLSPolicy` status for standalone `AgentgatewayBackends` — validate spans on a rolling restart and re-check `kubectl get` status expectations. [Details](reports/agentgateway-updates/latest.md)
+- **fortigate-health** - healthy and quiet: CPU 0% (24-h max 18%), memory flat at 38% (1.41 GiB / 3.63 GiB), 627 IPv4 sessions vs a 24-h peak of 1,819 — no counter reached the 80% threshold. [Details](reports/fortigate-health/latest.md)
 
 ### Report status
-
 | Report | Status | Verdict | Today | History |
 | --- | --- | --- | --- | --- |
-| [redteam-posture](reports/redteam-posture/latest.md) | MISSING | - | - | - |
-| [agentgateway-updates](reports/agentgateway-updates/latest.md) | WATCH | 45 PRs, no v1.8 tag: loopback rejection, ReferenceGrant enforcement. | [2026-11-25](reports/agentgateway-updates/2026/2026-11-25.md) | [all](reports/agentgateway-updates/) |
-| [kagent-updates](reports/kagent-updates/latest.md) | ACTION | Three releases (kagent v0.10.7, tools v0.3.2, substrate v1.1.0-alpha1); #192 blocked. | [2026-11-25](reports/kagent-updates/2026/2026-11-25.md) | [all](reports/kagent-updates/) |
-| [agentdesktop-updates](reports/agentdesktop-updates/latest.md) | WATCH | v0.7.0: JWKS on its own listener, loopback-only controller auth, enrollment tokens. | [2026-11-25](reports/agentdesktop-updates/2026/2026-11-25.md) | [all](reports/agentdesktop-updates/) |
-| [fortigate-health](reports/fortigate-health/latest.md) | OK | HEALTHY — all counters well under 80%; nothing to flag. | [2026-11-25](reports/fortigate-health/2026/2026-11-25.md) | [all](reports/fortigate-health/) |
-| [k8s-cve](reports/k8s-cve/latest.md) | ACTION | CoreDNS 1.12.3 (10 HIGH), Flannel 0.27.2 (RCE), Argo CD v3.5.3 (1 CRITICAL + 1 HIGH). | [2026-11-25](reports/k8s-cve/2026/2026-11-25.md) | [all](reports/k8s-cve/) |
-| [fortiguard-cve](reports/fortiguard-cve/latest.md) | ACTION | Four advisories hit the running v7.4.11; three CRITICAL; fix is 7.4.13. | [2026-11-25](reports/fortiguard-cve/2026/2026-11-25.md) | [all](reports/fortiguard-cve/) |
+| [fortiguard-cve](reports/fortiguard-cve/latest.md) | ACTION | 4 of 7 30-day FortiOS advisories hit running v7.4.11 build 2878, three CVSS 9.0+; fix is FortiOS 7.4.13. | [2026-11-26](reports/fortiguard-cve/2026/2026-11-26.md) | [all](reports/fortiguard-cve/) |
+| [k8s-cve](reports/k8s-cve/latest.md) | MISSING | - | - | [all](reports/k8s-cve/) |
+| [kagent-updates](reports/kagent-updates/latest.md) | WATCH | No releases or merges in kagent/substrate; two website merges; substrate #192 still blocked. | [2026-11-26](reports/kagent-updates/2026/2026-11-26.md) | [all](reports/kagent-updates/) |
+| [agentdesktop-updates](reports/agentdesktop-updates/latest.md) | WATCH | Nothing to upgrade — v0.7.0 unchanged; #287 gateway-credential blocker and draft #299 still open. | [2026-11-26](reports/agentdesktop-updates/2026/2026-11-26.md) | [all](reports/agentdesktop-updates/) |
+| [agentgateway-updates](reports/agentgateway-updates/latest.md) | WATCH | Zero merges or releases (HEAD `134cbf02`, v1.7.0); 9 new PRs, auth-hardening pair still active. | [2026-11-26](reports/agentgateway-updates/2026/2026-11-26.md) | [all](reports/agentgateway-updates/) |
+| [fortigate-health](reports/fortigate-health/latest.md) | OK | HEALTHY — every resource counter far below the 80% alert threshold; nothing to flag. | [2026-11-26](reports/fortigate-health/2026/2026-11-26.md) | [all](reports/fortigate-health/) |
+| redteam-posture (no directory in repo) | MISSING | - | - | - |
 
 Audit: [reports/_status/latest.md](reports/_status/latest.md) - Past digests: [reports/_digest/](reports/_digest/)
 
