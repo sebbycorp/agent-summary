@@ -1,49 +1,67 @@
-# agentdesktop-updates - 2026-11-25
+# agentdesktop-updates - 2026-11-26
 
-**v0.7.0 shipped this morning** — the whole breaking v0.7 set that had been `main`-only is now a release: gateway JWKS on its own listener (#240), loopback-only controller authn/authz (#220), enrollment tokens (#267), fleet limits (#237/#261), required `controller.caCertificatePath` (#234), OpenCode 2 credential plugin (#229), plus the Rosetta-2 PKG fix (#293). 2 PRs merged since yesterday's report; no new releases in `website`.
+**Quiet day upstream — zero merged PRs, zero new releases since yesterday's v0.7.0; `main` is still `2b5a7e5` (#293).** All the action is in the open queue, and it is queue day for the agentgateway path: new draft [#299] fixes Copilot CLI and Claude Code *version discovery* plus the gateway credential-helper socket, and [#289]/[#287] both advanced on top of v0.7.0.
 
-Window: 2026-11-24 → 2026-11-25 (from `latest.md`). Repos: `agentdesktop`, `website`.
+Window: 2026-11-25 → 2026-11-26 (from `latest.md`). Repos: `agentdesktop`, `website`.
 
 ## Releases
 
 | Repo | Tag | Published | Highlights | Link |
 |---|---|---|---|---|
-| agentdesktop | **v0.7.0** (latest stable) | 2026-11-25 11:06Z | Gateway JWKS on a dedicated listener, loopback-only controller auth, enrollment tokens, fleet limits, OpenCode 2 plugin, arm64 PKG without Rosetta | [v0.7.0](https://github.com/agentdesktop-dev/agentdesktop/releases/tag/v0.7.0) |
-| agentdesktop | v0.6.0 (previous) | 2026-11-06 | superseded | [v0.6.0](https://github.com/agentdesktop-dev/agentdesktop/releases/tag/v0.6.0) |
-| website | n/a | – | no releases at all | – |
+| agentdesktop | **v0.7.0** (latest stable, unchanged) | 2026-11-25 11:06Z | Cut from `2b5a7e5`; gateway JWKS on its own listener, loopback-only controller auth, enrollment tokens, fleet limits, OpenCode 2 plugin, arm64 PKG without Rosetta | [v0.7.0][r070] |
+| agentdesktop | v0.6.0 (previous) | 2026-11-06 | superseded; arm64 PKG is the broken Rosetta one | [v0.6.0][r060] |
+| website | n/a | – | no releases | – |
 
-No pre-releases exist. Artifacts: controller image `ghcr.io/agentdesktop-dev/agentdesktop-controller:v0.7.0`, Helm `oci://ghcr.io/agentdesktop-dev/charts/agentdesktop-controller:0.7.0`, headless static Linux binaries (RHEL 8 OK), signed Windows MSIs, notarized macOS PKGs, Sigstore provenance on Linux (`gh attestation verify <FILE> --repo agentdesktop-dev/agentdesktop`).
+**No new releases in window.** Tag list unchanged from yesterday: v0.7.0 is newest of 9 tags, still no pre-releases and no drafts — so [#297] (pre-release MSI/`-rc` versioning) is not yet paying off. Demo artifacts stay: controller image `ghcr.io/agentdesktop-dev/agentdesktop-controller:v0.7.0`, Helm chart `0.7.0`.
 
 ## Highlights
 
-- **Breaking for every agentgateway demo: the JWKS moved (#240).** `feat(controller)!: listener-scoped config, and serve the gateway JWKS only on a gateway listener` — repoint every agentgateway JWKS URL at `gatewayListener` (`127.0.0.1:8444`, `tls: true`) before upgrading past v0.6.0, or Copilot CLI / Claude Code / Pi / OpenCode token validation silently stops working. Listener-scoped config also means one listener's config no longer leaks into another.
-- **Breaking for remote controllers: #220 makes the controller loopback-only by default** with pluggable authn/authz. Anything that reaches a controller off-box needs explicit auth config now — rehearse this before a multi-machine demo. Related tightening: **#234** requires `controller.caCertificatePath`, so plain-HTTP/self-signed controller endpoints are refused by the agent.
-- **Zero-touch enrollment is now real, and the flow changed.** **#267** ships operator-signed enrollment tokens; **#236** moves enrollment after user login (no more "pending enrollment"); **#231** stops a system-mode daemon from opening a browser. Caveat unchanged: on a token-enrolled device there is still no user, so `GetLlmGatewayCredential` returns `FAILED_PRECONDITION` — **#287 is the unblock and it is still open.** Also from #267 docs work (**#286**, merged yesterday): deleting a token-enrolled device does not keep it out.
-- **Gateway tool coverage grew: OpenCode 2.** **#229** writes an OpenCode 2 credential plugin *next to* the V1 one, so both config generations get gateway credentials — test both in an OpenCode demo.
-- **Two security fixes are finally in a release.** **#294** bumps `cookie` 0.18.2→0.18.3 (RUSTSEC-2026-0594: private cookie nonces can repeat in forking processes) and `url` 2.5.8→2.5.9 (RUSTSEC-2026-0592: stack overflow in `Url::origin()` on nested `blob:` URLs), with workspace minimum `url` = 2.5.9 — both on the web/credential path. They had been failing cargo-deny on `main` itself.
-- **Supply-chain hardening landed (#256)**: pinned actions and base images, cargo-deny in CI, Helm NetworkPolicy; **#277** replaced unmaintained `humantime-serde` with `jiff`.
-- **Apple-silicon installs are fixed in v0.7.0 (#293, merged 11-24 15:12Z).** The released **v0.6.0 arm64 PKG cannot install on a Mac without Rosetta 2** and runs its `preinstall`/`postinstall` translated when Rosetta is present (`distribution.xml` set no `hostArchitectures`). Always demo from v0.7.0 on M-series; the author did not test the no-Rosetta install path.
-- **Quality-of-life for demos:** **#296** shows the version number in the controller UI — no more guessing which controller a live fleet is running.
+- **Nothing to upgrade today — that is the headline.** v0.7.0 has sat on `main` for ~26 h with no follow-up merges, so omni-viper stays on `v0.7.0` / chart `0.7.0` with no churn. No breaking changes landed in window.
+- **New, aimed straight at the agentgateway demos: [#299] (draft, 11-25 16:59Z, +419/−51, 4 commits)** — four daemon bugs found while "running the supported clients through a local gateway on macOS":
+  - **Copilot CLI reported a stale version.** Its launcher runs the newest per-user cached build but discovery read only the `@github/copilot` manifest, so it went stale after the first self-update; discovery now reports the higher of newest complete cached build and manifest. Caveats: on a shared device you get the newest build *any* user has, and `COPILOT_*` cache overrides aren't read.
+  - **npm-installed Claude Code had no version at all** (only the native `versions/<version>` layout was read); now reads the `@anthropic-ai/claude-code` manifest via a helper shared with Copilot.
+  - **A relative `daemon.socket` silently broke credential helpers** — the socket path is baked into each managed tool's helper command and each tool runs it from its own CWD. Now made absolute at startup. **This is the failure mode behind "Claude Code / Pi / OpenCode asks me to sign in and nothing happens."**
+  - **Behaviour change:** the daemon now *refuses to load its own config* that sets `telemetry` without `controller` (events were answered 424 and dropped silently). Controller-pushed docs unaffected — but a hand-written local daemon config can now fail to start.
+- **Enrollment is converging, and it changes what a demo clicks.** [#289] (11-25 17:18Z, +892/−98, 12 commits) makes a revoked/removed-issuer token device get `PERMISSION_DENIED` and **keep its identity** instead of re-enrolling under new device IDs — undoing a revocation or fixing a typo'd issuer no longer recreates the fleet. Adds `publicKeys` key rotation and surfaces `enrollment_token_issuer`/`_id` in the device UI (search matches token IDs). Open, `blocked`, review on ilackarms; Helm has no `enrollmentTokens` values yet.
+- **The gateway-credential blocker is still the blocker.** [#287] (AttachUser, 37 files, +2538/−546) refreshed 11-25 08:01Z, still `mergeable_state: blocked`. Until it lands, **a token-enrolled device cannot get `GetLlmGatewayCredential` (`FAILED_PRECONDITION`) — no Copilot CLI / Claude Code / Pi / OpenCode through agentgateway on a zero-touch fleet.** Demo OIDC (user-signed-in) enrollment until then.
+- **Config-as-data is close:** [#280] (11-25 13:03Z) — 33 files, +3922 lines: opt-in DB store for daemon config with validated saves, conflict detection, revision history + restore, and a web YAML editor/builder with rollout status. File mode stays read-only by default; mode switching deferred to issue #279.
+- **Queue hygiene:** five Dependabot PRs opened 11-25 18:2x, all unmerged — [#304] (rust, 12 updates), [#303] (frontend, 8), [#302] (glibc-dynamic), [#301], [#300]. Nothing newly vulnerable; `main` still carries yesterday's RustSec fixes.
 
 ## Merged PRs by repo
 
-`is:pr is:merged merged:>=2026-11-24` → 3 results; [#294](https://github.com/agentdesktop-dev/agentdesktop/pull/294) (11-24 13:08Z) was covered in yesterday's report, so these 2 are new. `website`: no merged PRs, no commits in window (last push 2026-10-30).
-
-| Repo | PR | Title | Author | Merged |
-|---|---|---|---|---|
-| agentdesktop | [#293](https://github.com/agentdesktop-dev/agentdesktop/pull/293) | fix(macos): declare the package architecture so the PKG installs without Rosetta 2 | [devmittal02](https://github.com/devmittal02) | 2026-11-24 |
-| agentdesktop | [#296](https://github.com/agentdesktop-dev/agentdesktop/pull/296) | display version number in the controller UI | [peterj](https://github.com/peterj) | 2026-11-24 |
-
-`main` head is now `2b5a7e5` (#293); `v0.7.0` was cut from it at 11:06Z today.
+**None in window.** `is:pr is:merged merged:>=2026-11-25` → 0 results for both repos. `main` head unchanged at [`2b5a7e5`][c2b5a7e5] (#293, 11-24 15:12Z); `list_commits since=2026-11-25` is empty. `website` last push 2026-10-30.
 
 ## Watch list
 
-- **[#288](https://github.com/agentdesktop-dev/agentdesktop/pull/288)** — one shared browser sign-in across gateway credential requests (`BrowserSignInPending`/401 naming the open page, no sign-in deadline, 1h→8h reopen backoff, GitHub step failure no longer fails the credential, identity-only prompts skip the checklist). Still open, `mergeable_state: blocked`, unchanged since 11-23 — this is what makes "sign in once overnight, the four tools work in the morning" demoable.
-- **[#287](https://github.com/agentdesktop-dev/agentdesktop/pull/287)** — AttachUser/DetachUser, `POST /v1/login` + `/v1/logout`, `GET /v1/enrollment` gains `user: signedOut|awaitingAuthentication|signedIn`; 37 files, +2538/−546, refreshed 11-25 08:01Z and still `blocked`. Until it merges, token-enrolled fleets get no gateway credential.
-- **Two competing metrics designs — decide before building dashboards:** [#290](https://github.com/agentdesktop-dev/agentdesktop/pull/290) (`agentdesktop_limit_hits_total` + `agentdesktop_connections` on an optional `metricsListener`, fleet-listener 30s timeout moved into a counting `RequestTimeout` layer) vs [#180](https://github.com/agentdesktop-dev/agentdesktop/pull/180) (OpenTelemetry SDK, 8 comments, updated 11-24 17:54Z).
-- **[#285](https://github.com/agentdesktop-dev/agentdesktop/pull/285)** — opt-in `inactiveDevices.removeAfter` (e.g. `30days`, min `1day`) hourly sweep of stale device records; keeps devices with an open `Connect` stream and re-checks contact at delete time. Filed against `b57329c`, so it needs a rebase onto v0.7.0. Fixes the duplicate-device drift seen in fleets (4 of ~20 duplicated in a week).
-- **[#203](https://github.com/agentdesktop-dev/agentdesktop/pull/203)** — sandboxed launches for managed programs, Windows preview (updated 11-24 18:21Z) — relevant to how we show Claude Code/Codex isolation.
-- **[#259](https://github.com/agentdesktop-dev/agentdesktop/pull/259)** — `daemon.controllerLimits.allowedGatewayOrigins`, fail-closed at startup (rejected pushes → `CONFIG_STATE_REJECTED` + controller Rejected badge). Known gap: free-form program URLs (Claude Code `env.ANTHROPIC_BASE_URL`, Codex `base_url`) are not checked.
-- **[#297](https://github.com/agentdesktop-dev/agentdesktop/pull/297)** — new (11-25 13:37Z): `--build-only`/`--bundle-only` macOS packaging so the app can be signed before PKG creation, plus numeric WiX version for pre-release suffixes → expect proper `-rc`/pre-release builds soon.
-- Also active, unreviewed-ish: [#239](https://github.com/agentdesktop-dev/agentdesktop/pull/239) admin audit logging (A5), [#162](https://github.com/agentdesktop-dev/agentdesktop/pull/162) per-device browser PAC + optional compliance check.
-- **Upgrade checklist for omni-viper:** v0.7.0 requires migrations `0005_enrollment_receipts` and `0006` (#267); repoint gateway JWKS at `gatewayListener` (#240); set `controller.caCertificatePath` (#234); re-test Windows agentgateway after the MSI/version changes.
+- **[#299]** — *highest demo impact of anything open.* Draft + `blocked`; Windows/Linux Copilot cache paths untested. Test on omni-viper: does the fleet UI finally show sane client versions for all four gateway tools?
+- **[#287]** — AttachUser/DetachUser, `POST /v1/login` + `/v1/logout`, `GET /v1/enrollment` gains `user: signedOut|awaitingAuthentication|signedIn`, gateway credentials tagged per sign-in. **The unblock for gateway credentials on token-enrolled fleets.** Still `blocked`.
+- **[#289]** — stable device IDs under revocation, `publicKeys` rotation, token columns in device UI. Watch for Helm `enrollmentTokens` values, since demos deploy via chart.
+- **[#280]** — DB-backed daemon config + web YAML editor with rollout status; API/UX surface change worth testing on omni-viper before it merges.
+- **[#290] vs [#180]** — two competing metrics designs (`agentdesktop_limit_hits_total` + `agentdesktop_connections` on an optional `metricsListener`, vs an OpenTelemetry SDK). #290 moved 11-25 16:58Z. Don't build demo dashboards until one wins.
+- **[#297]** — `--build-only`/`--bundle-only` macOS packaging (sign the app before PKG creation) + numeric WiX version for pre-release suffixes; 11-25 13:47Z, `blocked`. First `-rc`/pre-release artifacts land behind this.
+- **[#259]** — `daemon.controllerLimits.allowedGatewayOrigins`, fail-closed at startup, plus a control-plane threat model doc (11-25 16:45Z). Gap: free-form program URLs (Claude Code `env.ANTHROPIC_BASE_URL`, Codex `base_url`) are *not* checked — don't claim full gateway pinning.
+- **[#239]** — admin audit logging (A5), active 11-25 21:27Z. Most-requested compliance item for enterprise fleet pitches.
+- **[#285] / [#288] / [#203] / [#162]** — no movement. #285 (opt-in `inactiveDevices.removeAfter`, fixes duplicate-device drift) still filed against pre-v0.7.0 `b57329c`, needs a rebase; [#288] (shared browser sign-in across gateway credential requests) remains the "sign in once overnight, four tools work in the morning" enabler.
+
+<!-- links -->
+[r070]: https://github.com/agentdesktop-dev/agentdesktop/releases/tag/v0.7.0
+[r060]: https://github.com/agentdesktop-dev/agentdesktop/releases/tag/v0.6.0
+[c2b5a7e5]: https://github.com/agentdesktop-dev/agentdesktop/commit/2b5a7e5c899d4f96c4b3aabeae6797582cf7a842
+[#299]: https://github.com/agentdesktop-dev/agentdesktop/pull/299
+[#289]: https://github.com/agentdesktop-dev/agentdesktop/pull/289
+[#287]: https://github.com/agentdesktop-dev/agentdesktop/pull/287
+[#280]: https://github.com/agentdesktop-dev/agentdesktop/pull/280
+[#297]: https://github.com/agentdesktop-dev/agentdesktop/pull/297
+[#290]: https://github.com/agentdesktop-dev/agentdesktop/pull/290
+[#180]: https://github.com/agentdesktop-dev/agentdesktop/pull/180
+[#259]: https://github.com/agentdesktop-dev/agentdesktop/pull/259
+[#239]: https://github.com/agentdesktop-dev/agentdesktop/pull/239
+[#285]: https://github.com/agentdesktop-dev/agentdesktop/pull/285
+[#288]: https://github.com/agentdesktop-dev/agentdesktop/pull/288
+[#203]: https://github.com/agentdesktop-dev/agentdesktop/pull/203
+[#162]: https://github.com/agentdesktop-dev/agentdesktop/pull/162
+[#304]: https://github.com/agentdesktop-dev/agentdesktop/pull/304
+[#303]: https://github.com/agentdesktop-dev/agentdesktop/pull/303
+[#302]: https://github.com/agentdesktop-dev/agentdesktop/pull/302
+[#301]: https://github.com/agentdesktop-dev/agentdesktop/pull/301
+[#300]: https://github.com/agentdesktop-dev/agentdesktop/pull/300
