@@ -1,36 +1,38 @@
-# fortigate-health - 2026-11-26
+# fortigate-health - 2026-11-27
 
-**Verdict: HEALTHY** — all resource counters are far below the 80% alert threshold; nothing to flag.
+**Verdict: HEALTHY** — every resource counter is well below the 80% threshold; nothing to flag.
 
-Device: fw-maniak-hq · FortiGate 80F (FGT80F) · serial FGT80FTK22061709 · FortiOS v7.4.11 build 2878 · VDOM root
-Sample time: 2026-11-26 14:00:05 UTC (09:00 EST, America/Toronto) · source: `fg_system_status`, `fg_resource_usage` (read-only)
+- **Device:** fw-maniak-hq — FortiGate 80F, serial FGT80FTK22061709, FortiOS v7.4.11 build 2878, VDOM root
+- **Check time:** 2026-11-27 09:00:05 America/Toronto (14:00:05 UTC)
+- **Sources:** read-only `fg_resource_usage` + `fg_system_status` (plus `fg_log_state` for the disk/logging context). No configuration was read back with write tools and nothing on the firewall was changed.
 
-| Metric | Current | 1-min avg | 24-h avg | 24-h max | Status |
-|---|---|---|---|---|---|
-| CPU usage (all 8 cores) | 0% | 0% | 0% | 18% | OK |
-| Memory usage | 38% | 38% | 38% | 39% | OK |
-| Memory used / total | 1.41 GiB / 3.63 GiB (1,513,156,608 / 3,897,774,080 B) | — | — | — | OK |
-| Memory free / freeable | 1.86 GiB / 0.36 GiB | — | — | — | OK |
-| Disk usage | n/a — `log_disk_status: not_available` (no local disk logging) | — | — | — | N/A |
-| Sessions (IPv4) | 627 | 618 | 966 | 1,819 | OK |
-| Sessions (IPv6) | 9 | 8 | 9 | 22 | OK |
-| Session setup rate (sec^-1) | 5 | 4 | 3 | 210 | OK |
-| Session setup rate v6 (sec^-1) | 0 | 0 | 0 | 7 | OK |
-| NPU-offloaded sessions | 345 | 338 | 371 | 910 | OK |
-| NPU-offloaded sessions v6 | 0 | 0 | 0 | 0 | OK |
-| NTurbo sessions | 16 | 14 | 17 | 78 | OK |
-| NTurbo sessions v6 | 0 | 0 | 0 | 0 | OK |
-| Disk log rate (msg/s) | 0 | 0 | 0 | 0 | OK |
-| FortiAnalyzer log rate | 0 | 0 | 0 | 0 | OK |
-| FortiCloud log rate (msg/s) | 10 | 8 | 13 | 118 | OK |
-| FortiAnalyzer-to-Cloud log rate | 0 | 0 | 0 | 0 | OK |
+## Resource usage
 
-## Notes / >80% flags
+| Metric | Current | 24 h max | 24 h avg | Status |
+|---|---|---|---|---|
+| CPU (all 8 cores) | 0 % | 19 % | 0 % | OK |
+| Memory | 38 % — 1.41 GiB / 3.63 GiB (1,516,670,976 / 3,897,774,080 bytes) | 39 % | 38 % | OK |
+| Disk | 0 % (see note) | 0 % | 0 % | OK / n-a |
+| Sessions (IPv4) | 1,078 | 2,016 | 912 | OK |
+| Sessions (IPv6) | 15 | 21 | 10 | OK |
+| Session setup rate | 12 /s | 172 /s | 3-4 /s | OK |
+| Session setup rate (IPv6) | 0 /s | 7 /s | 0 /s | OK |
+| NPU-offloaded sessions | 487 | 1,044 | 397 | OK |
+| NPU-offloaded sessions (IPv6) | 0 | 0 | 0 | OK |
+| NTurbo sessions | 26 | 92 | 20 | OK |
+| NTurbo sessions (IPv6) | 0 | 0 | 0 | OK |
+| FortiCloud log rate | 11 /s | 107 /s | 11 /s | OK |
+| Local-disk log rate | 0 /s | 0 /s | 0 /s | n/a |
+| FortiAnalyzer log rate | 0 /s | 0 /s | 0 /s | n/a |
+| FortiAnalyzer-cloud log rate | 0 /s | 0 /s | 0 /s | n/a |
 
-- None — no counter reached 80%.
-- CPU near-idle: 1-min 0%, 10-min max 1%, 30-min/1-hour max 9%, 12-hour max 17%, 24-hour max 18%.
-- Memory flat at 38% across all sampling windows (peak 39%); ~2.2 GiB available including freeable memory.
-- Session load is normal home-lab scale: 627 now vs. 24-hour peak of 1,819; setup rate steady at ~3-5 sec^-1 with a 24-hour burst peak of 210.
-- Disk: the 80F reports `log_disk_status: not_available`, so the API exposes no disk-usage percentage. Not a fault — nothing to measure. `disk_lograte` is 0, consistent with no local disk logging.
+## Threshold review (>80%)
 
-Report generated read-only; no changes were made on the firewall.
+No metric exceeded 80%. The highest sustained values were memory at 38-39%, CPU peaking at 19% over the last hour/24h window with all 8 cores currently reporting 100% idle, and session count peaking at 2,016 in 24 hours against a 1,078 instantaneous value. Setup-rate spikes (172/s peak in 24 h) are short bursts with no CPU or memory consequence.
+
+## Notes
+
+- **Memory detail:** free 1.86 GiB (1,992,949,760 bytes) plus 0.36 GiB (388,153,344 bytes) reclaimable/cache; no memory pressure and no sign of leak-driven growth (24 h min/max 38%/39%).
+- **Disk note:** the reported 0% disk is *not* an independent healthy-disk reading — disk logging is unavailable on this unit (`log_disk_status: not_available`, local disk `is_available: false`, 0 SSDs available, FortiAnalyzer disabled). Logs are forwarded to FortiCloud (enabled, 500 MB quota, 0 bytes currently used). There is therefore no local log-partition fill risk to monitor.
+- **Session mix:** roughly 45% of IPv4 sessions are NPU-offloaded (487 of 1,078) and 26 are NTurbo-accelerated, which is consistent with the near-zero CPU usage.
+- **Recommendation:** none required. Continue daily collection; only memory trend, CPU spikes sustained above 80%, or a session count approaching the 80F platform limit would warrant action.
