@@ -1,46 +1,58 @@
-# agentgateway-updates - 2026-11-26
+# agentgateway-updates - 2026-11-27
 
-**Thanksgiving Thursday went quiet: zero merged PRs and zero commits to `main` in the ~24h window — `agentgateway` HEAD is still `134cbf02` (#4556, 11-24T23:22Z). No releases (still v1.7.0 from Oct 27). What moved is the *incoming* queue: 9 new PRs opened (Vertex embeddings routing, telemetry-on-drain, BackendTLSPolicy status, Anthropic structured-output schemas) and the auth-hardening pair #4545/#4394 is still active. `benchmarks` / `community` idle.**
+**Quiet on merges for a second day — zero merged PRs and zero commits to `main` since `134cbf02` (#4556, 11-24T23:22Z), so the demo build is still the 11-24 nightly. Incoming queue is the story: 7 new PRs in ~24h, four demo-relevant — MCP discovery timeouts (#4576), OIDC access-token forwarding (#4575), AgentCore MCP targets by runtime ARN (#4579, CRD change), plus a `probe` command for distroless readiness (#4581). No releases (v1.7.0 still stands, Oct 27); `benchmarks` / `community` idle.**
 
-_Window: since the 2026-11-25 digest (last merged work closed 11-24T23:22Z). Verified with `list_commits since=2026-11-24T23:30Z` → empty on both `agentgateway` and `website`._
+_Window: since the 2026-11-26 digest. `list_commits since=2026-11-26T00:00Z` → empty on all repos; `merged:>=2026-11-26` → 0 (the [48 hits](https://github.com/search?q=org%3Aagentgateway+is%3Apr+is%3Amerged+merged%3A%3E%3D2026-11-24&type=pullrequests) closed 11-24, already reported)._
 
 ## Releases
 
-**None published in window.** The cut still stands at Oct 27, so everything below the line is nightly / `:latest-dev`.
+**None published** — cut still Oct 27; everything past the line is nightly / `:latest-dev`.
 
 | Repo | Latest stable | Latest pre-release |
 | --- | --- | --- |
 | agentgateway | [v1.7.0](https://github.com/agentgateway/agentgateway/releases/tag/v1.7.0) (10-27T17:18Z) | [v1.7.0-rc.1](https://github.com/agentgateway/agentgateway/releases/tag/v1.7.0-rc.1) (10-26) |
-| website | [Docs for v1.7.0](https://github.com/agentgateway/website/releases/tag/v1.7.0) (10-27T23:37Z) | - |
+| website | [Docs for v1.7.0](https://github.com/agentgateway/website/releases/tag/v1.7.0) (10-27T23:37Z) | – |
 
-Still no `v1.8.0-alpha.1` tag, and the rolling release-note PR [website#1586](https://github.com/agentgateway/website/pull/1586) is open with `mergeable_state: behind`, last touched 11-23T15:11Z — its body now warns that **11 reference URLs it adds were never seen in the docs before**, so the 1.8 notes are not reader-safe yet.
+Still no `v1.8.0-alpha.1`. The rolling release-note PR [website#1586](https://github.com/agentgateway/website/pull/1586) is open + `behind`, untouched since 11-23T15:11Z, still flags that the reference URLs it adds were never seen in the docs, with unresolved notes for #4300 (Bedrock native endpoints, breaking), #3872 (file-backed mTLS), #4214 (MCP Skills).
 
 ## Highlights
 
-- **Nothing to re-test from merges today** — same build as yesterday's digest. Anything demoed on omni-viper today equals the 11-24 `:latest-dev` image.
-- **Vertex embeddings still mis-routed → fix open** ([#4570](https://github.com/agentgateway/agentgateway/pull/4570), howardjohn, 11-25T15:50Z): completes the path-routing family from #4555/#4556 — `.../embedContent` calls through the model router pick up `embedContent` as the *model name*. Until this merges, Vertex embeddings need a per-backend routes override in the demo config.
-- **Drain was silently eating telemetry** ([#4568](https://github.com/agentgateway/agentgateway/pull/4568), rajatvig, fixes #4452): telemetry now shuts down *after* the drain so spans/logs emitted during a pod shutdown are recorded. Directly affects the graceful-rollout + observability story.
-- **Standalone CRD status gap** ([#4561](https://github.com/agentgateway/agentgateway/pull/4561), xixi-box): `BackendTLSPolicy` status now reported for standalone `AgentgatewayBackends` — status surface change, worth checking your `kubectl get` output expectations.
-- **Structured-output fidelity** ([#4562](https://github.com/agentgateway/agentgateway/pull/4562), pqminh27): normalizes Anthropic structured-output schemas — pairs with the config-time OpenAPI parse (#4551) for the "tool/schema is wrong, fail early" demo.
-- **Config API UX** ([#4560](https://github.com/agentgateway/agentgateway/pull/4560), howardjohn, 11-24T23:57Z): fixes a misleading conflict error message from the config API — relevant when scripting config pushes for labs.
-- **Auth hardening pair still churning** — [#4545 expire cached remote signing keys](https://github.com/agentgateway/agentgateway/pull/4545) (upd. 11-25T01:09Z) and [#4394 isolate remote JWKS fetch failures](https://github.com/agentgateway/agentgateway/pull/4394) (upd. 11-26T04:47Z): IdP-outage behaviour will change (stale-key reuse vs. fail-closed). Re-run the JWT demo when either lands. Also open: [#4530 bound client-supplied metric labels](https://github.com/agentgateway/agentgateway/pull/4530) (cardinality/DoS).
-- **No new CVEs** against org-owned code in window; no security advisories published.
-- **Automated churn, all still open in `website`**: [#1621 reference docs from main](https://github.com/agentgateway/website/pull/1621), [#1622 docs fixes (backend-authn-cross-app-access-standalone)](https://github.com/agentgateway/website/pull/1622), [#1623 third-party bumps — agent-sandbox, argo-cd, argo-rollouts-gatewayapi-plugin +22](https://github.com/agentgateway/website/pull/1623), [#1624 fix doc tests from a nightly run](https://github.com/agentgateway/website/pull/1624).
-- **`benchmarks` last commit 10-28** ([#8 harness isolation](https://github.com/agentgateway/benchmarks/commit/d53aaaab52cccefd8d220f727bccf3cb53a85b65)); **`community` last commit 08-25**. Both idle.
+- **One hung MCP server could stall the whole discovery fanout** ([#4576](https://github.com/agentgateway/agentgateway/pull/4576), xixi-box, 11-26T14:55Z, fixes #4572) — the top demo item this window. Optional `discoveryTimeout` on local MCP targets: one deadline from request to terminal response; `failOpen` logs and skips the target, `failClosed` returns 504; tool calls keep existing timeouts. Config-schema change. Makes a flaky third-party MCP server survivable in a tools demo.
+- **OIDC login could still 400 vs. an OAuth-exchange backend** ([#4575](https://github.com/agentgateway/agentgateway/pull/4575), 11-26T14:04Z, fixes #4571): opt-in `forwardAccessToken` keeps the provider token in the encrypted browser session and supplies it as the Bearer / RFC 8693 subject token. Off by default; provider token lifetime can shorten the session.
+- **Bedrock AgentCore MCP without hand-building the URL** ([#4579](https://github.com/agentgateway/agentgateway/pull/4579), 11-26T22:52Z, fixes #4574): K8s MCP targets gain `static.agentCore` (runtime ARN + qualifier); the controller emits the same AWS backend HTTPRoute uses, so the data plane derives the regional invocation URL with default TLS + SigV4 over Streamable HTTP. **CRD change** — regenerate CRDs.
+- **Distroless had no readiness probe** ([#4581](https://github.com/agentgateway/agentgateway/pull/4581), 11-26T23:33Z, fixes #4580): new `agentgateway probe` hits `/healthz/ready` (1s timeout, default `127.0.0.1:15021`, `--address` override, exit 0/1) — fixes the loopback-bind vs. Pod-IP kubelet mismatch.
+- **A broken authz rule looked like a non-match** ([#4584](https://github.com/agentgateway/agentgateway/pull/4584), 11-27T12:58Z, fixes #4583): CEL errors evaluate as false, so a failed Deny silently allows. New `agentgateway_authorization_cel_evaluation_errors_total` with bounded `mode`/`layer` labels.
+- **Smaller fixes worth knowing**: Vertex cost accuracy ([#4582](https://github.com/agentgateway/agentgateway/pull/4582), matvas-txf, 11-27T09:05Z) — region-dependent pricing (`global` cheapest; `us`/`eu` ≈1.1x) plus Priority/Flex prices for newer Gemini models, so UI cost attribution shifts; and caller identity is now propagated to child spans ([#4578](https://github.com/agentgateway/agentgateway/pull/4578), 11-26T20:36Z, fixes #4573), which had been missing from outbound-latency metrics.
+- **No new CVEs or advisories.** Auth hardening open/`blocked`: [#4545 `jwks.maxAge`](https://github.com/agentgateway/agentgateway/pull/4545) (expired keys → 503) and [#4394 JWKS failure isolation](https://github.com/agentgateway/agentgateway/pull/4394) — IdP-outage fail-open/closed behaviour changes; re-run the JWT demo when either lands.
+- **Nothing to re-test**: HEAD still [`134cbf02`](https://github.com/agentgateway/agentgateway/commit/134cbf02e02742cce08ad52cdd221fef579186b8); `benchmarks` last commit [10-28](https://github.com/agentgateway/benchmarks/commit/d53aaaab52cccefd8d220f727bccf3cb53a85b65), `community` [08-25](https://github.com/agentgateway/community/commit/0bd822d6ee2cc52c46fe6e13dfbd94f7c651074c).
 
 ## Merged PRs by repo
 
-**None in window.** No pull request merged in `agentgateway`, `website`, `benchmarks` or `community` between 2026-11-25T00:00Z and now. (The 48 PRs in [this search](https://github.com/search?q=org%3Aagentgateway+is%3Apr+is%3Amerged+merged%3A%3E%3D2026-11-24T00%3A00%3A00Z&type=pullrequests) all closed on 11-24 and were already reported.)
+**None in window** — nothing merged in any of the four repos since 2026-11-26. Newly **opened** queue instead (all unmerged):
+
+| Repo | PR | Title | Author | Opened |
+| --- | --- | --- | --- | --- |
+| agentgateway | [#4584](https://github.com/agentgateway/agentgateway/pull/4584) | Count CEL failures during authorization decisions | xixi-box | 11-27T12:58Z |
+| agentgateway | [#4582](https://github.com/agentgateway/agentgateway/pull/4582) | feat(llm): price Vertex AI regional endpoints | matvas-txf | 11-27T09:05Z |
+| agentgateway | [#4581](https://github.com/agentgateway/agentgateway/pull/4581) | Add a loopback readiness probe command | xixi-box | 11-26T23:33Z |
+| agentgateway | [#4579](https://github.com/agentgateway/agentgateway/pull/4579) | feat(controller): configure AgentCore MCP targets by runtime ARN | xixi-box | 11-26T22:52Z |
+| agentgateway | [#4578](https://github.com/agentgateway/agentgateway/pull/4578) | fix: propagate evaluated trace attributes to child spans | xixi-box | 11-26T20:36Z |
+| agentgateway | [#4576](https://github.com/agentgateway/agentgateway/pull/4576) | Bound MCP discovery with per-target deadlines | xixi-box | 11-26T14:55Z |
+| agentgateway | [#4575](https://github.com/agentgateway/agentgateway/pull/4575) | feat(oidc): optionally forward browser session access tokens | xixi-box | 11-26T14:04Z |
+
++1 ([search](https://github.com/search?q=org%3Aagentgateway+is%3Apr+created%3A%3E%3D2026-11-26&type=pullrequests)): [website#1624](https://github.com/agentgateway/website/pull/1624) doc-test fixes (MCP samples → `node:22-alpine`).
 
 ## Watch list
 
 | Item | Why |
 | --- | --- |
-| [#4570](https://github.com/agentgateway/agentgateway/pull/4570) | Vertex `embedContent` model extraction — open, `blocked`; embeddings routing needs a workaround until merged. |
-| [#4568](https://github.com/agentgateway/agentgateway/pull/4568) | Telemetry shutdown moved after drain (fixes #4452) — validate span completeness on a rolling restart on omni-viper. |
-| [#4561](https://github.com/agentgateway/agentgateway/pull/4561) | `BackendTLSPolicy` status for standalone `AgentgatewayBackend` — CRD/status change; re-check your TLS-backend status assertions. |
-| [#4562](https://github.com/agentgateway/agentgateway/pull/4562) | Anthropic structured-output schema normalization — regression-test JSON-schema tool calls after merge. |
-| [#4545](https://github.com/agentgateway/agentgateway/pull/4545) · [#4394](https://github.com/agentgateway/agentgateway/pull/4394) · [#4530](https://github.com/agentgateway/agentgateway/pull/4530) | JWT signing-key expiry, JWKS failure isolation, bounded client labels — auth fail-open/closed behaviour + metrics cardinality. |
-| [#4539](https://github.com/agentgateway/agentgateway/pull/4539) · [#4128](https://github.com/agentgateway/agentgateway/pull/4128) | llm-ir Messages→Responses via a typed model, plus empty-translation `finish_reason` fix — the translation workstream most likely to shake the Anthropic↔OpenAI demo. |
-| [#4455](https://github.com/agentgateway/agentgateway/pull/4455) · [#2939](https://github.com/agentgateway/agentgateway/pull/2939) · [#4132](https://github.com/agentgateway/agentgateway/pull/4132) · [#3875](https://github.com/agentgateway/agentgateway/pull/3875) | Entra federated credentials, OIDC browser-session store boundary, MCP pinned-endpoint 404, credential-provider failure classes — all actively reviewed 11-25/11-26. |
-| [website#1586](https://github.com/agentgateway/website/pull/1586) | 1.8 release-note roll-up, open + `behind`, 11 unverified links; gate for any `v1.8.0-alpha.1` tag. |
+| [#4576](https://github.com/agentgateway/agentgateway/pull/4576) | New `discoveryTimeout` MCP field — test failOpen skip vs. failClosed 504 with a hung server on omni-viper. |
+| [#4575](https://github.com/agentgateway/agentgateway/pull/4575) | `forwardAccessToken` — opt-in; changes cookie contents + session lifetime. Regression-test login + exchange. |
+| [#4579](https://github.com/agentgateway/agentgateway/pull/4579) | `static.agentCore` on `AgentgatewayBackend` — CRD change; regenerate CRDs, re-check AgentCore MCP (SigV4, Streamable HTTP). |
+| [#4581](https://github.com/agentgateway/agentgateway/pull/4581) | `agentgateway probe` — update distroless/loopback readiness manifests in the lab. |
+| [#4584](https://github.com/agentgateway/agentgateway/pull/4584) · [#4530](https://github.com/agentgateway/agentgateway/pull/4530) | Authz CEL-error counter + bounded client labels — dashboards, cardinality, silent Deny allows. |
+| [#4545](https://github.com/agentgateway/agentgateway/pull/4545) · [#4394](https://github.com/agentgateway/agentgateway/pull/4394) · [#2939](https://github.com/agentgateway/agentgateway/pull/2939) | `jwks.maxAge` fail-closed, JWKS failure isolation, OIDC session-store boundary — JWT/auth demo shifts. |
+| [#4570](https://github.com/agentgateway/agentgateway/pull/4570) · [#4568](https://github.com/agentgateway/agentgateway/pull/4568) | Vertex `embedContent` extraction (embeddings still need a routes override); telemetry shutdown after drain. |
+| [#4561](https://github.com/agentgateway/agentgateway/pull/4561) · [#4562](https://github.com/agentgateway/agentgateway/pull/4562) · [#4132](https://github.com/agentgateway/agentgateway/pull/4132) | `BackendTLSPolicy` status for standalone backends; Anthropic structured-output schemas; MCP pinned-endpoint 404. |
+| [#4539](https://github.com/agentgateway/agentgateway/pull/4539) · [#4128](https://github.com/agentgateway/agentgateway/pull/4128) · [#3875](https://github.com/agentgateway/agentgateway/pull/3875) | llm-ir Messages→Responses typed model; empty-translation `finish_reason` fix; credential-provider failure classes. |
+| [website#1586](https://github.com/agentgateway/website/pull/1586) · [#1621](https://github.com/agentgateway/website/pull/1621) · [#1623](https://github.com/agentgateway/website/pull/1623) · [#1525](https://github.com/agentgateway/website/pull/1525) | 1.8 release-note roll-up (open, `behind`, unverified links) gates any `v1.8.0-alpha.1`; docs churn. |
